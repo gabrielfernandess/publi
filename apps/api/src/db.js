@@ -24,7 +24,7 @@ export const SCHEMA_SQL = `
     email TEXT UNIQUE NOT NULL,
     nome TEXT NOT NULL,
     senha_hash TEXT NOT NULL,
-    papel TEXT NOT NULL CHECK(papel IN ('admin','atendimento','preparacao','envio','publicacao','faturamento','financeiro')),
+    papel TEXT NOT NULL CHECK(papel IN ('admin','user')),
     ativo INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -230,6 +230,47 @@ function migrate() {
 function ensureSchema() {
   db.exec(SCHEMA_SQL);
   migrate();
+  migrateRolesParaDois();
+}
+
+// Sprint 8: reduz 7 papéis para 2 (admin e user)
+function migrateRolesParaDois() {
+  // Detecta se ainda tem os 7 papéis antigos
+  const checkRow = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='users'").get();
+  if (!checkRow) return;
+  const sql = checkRow.sql || '';
+  if (sql.includes("'atendimento'") || sql.includes("'user'")) {
+    // Se tem 'user' novo, já migrou. Se tem 'atendimento', ainda é antigo.
+    if (sql.includes("'atendimento'")) {
+      // desabilitar FK pq outras tabelas referenciam users(id)
+      db.pragma('foreign_keys = OFF');
+      try {
+        db.exec(`
+          DROP TABLE IF EXISTS users_new;
+          CREATE TABLE users_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            nome TEXT NOT NULL,
+            senha_hash TEXT NOT NULL,
+            papel TEXT NOT NULL CHECK(papel IN ('admin','user')),
+            ativo INTEGER NOT NULL DEFAULT 1,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+          );
+          INSERT INTO users_new (id, email, nome, senha_hash, papel, ativo, created_at)
+            SELECT id, email, nome, senha_hash,
+              CASE WHEN papel = 'admin' THEN 'admin' ELSE 'user' END,
+              ativo, created_at
+            FROM users;
+          DROP TABLE users;
+          ALTER TABLE users_new RENAME TO users;
+          CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+        `);
+        console.log('[publi-legal/api] migrado: 7 papéis -> 2 (admin, user)');
+      } finally {
+        db.pragma('foreign_keys = ON');
+      }
+    }
+  }
 }
 ensureSchema();
 

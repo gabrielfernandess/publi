@@ -19,21 +19,16 @@ db.exec(`
 // Recria com o schema novo
 ensureSchema();
 
-// 1) Users (7 papéis — admin + 6 operacionais por etapa do kanban)
+// 1) Users (2 papéis: admin = tudo, user = operacional sem faturamento/NF)
 const userInsert = db.prepare(`INSERT INTO users (email, nome, senha_hash, papel) VALUES (?, ?, ?, ?)`);
 const usersSeed = [
-  ['admin@publilegal.com.br',       'Sócia Admin (Maria)',  'admin123',    'admin'],
-  ['atendimento@publilegal.com.br', 'Atendimento (Joana)',   'atend123',    'atendimento'],
-  ['preparacao@publilegal.com.br',  'Preparação (Carla)',   'prep123',     'preparacao'],
-  ['envio@publilegal.com.br',       'Envio (Beatriz)',      'envio123',    'envio'],
-  ['publicacao@publilegal.com.br',  'Publicação (Renata)',  'publi123',    'publicacao'],
-  ['faturamento@publilegal.com.br', 'Faturamento (Lúcia)',  'fatur123',    'faturamento'],
-  ['financeiro@publilegal.com.br',  'Financeiro (Sandra)',  'finan123',    'financeiro'],
+  ['admin@publilegal.com.br', 'Admin (Maria)',     'admin123', 'admin'],
+  ['user@publilegal.com.br',  'Usuário (Joana)',   'user123',  'user'],
 ];
 for (const [email, nome, senha, papel] of usersSeed) {
   userInsert.run(email, nome, bcrypt.hashSync(senha, 10), papel);
 }
-console.log('[seed] 7 users criados (1 de cada papel)');
+console.log('[seed] 2 users criados (admin + user)');
 
 // 2) Veiculos
 const veicInsert = db.prepare(`INSERT INTO veiculos (nome, tipo, estado, custo_cm) VALUES (?, ?, ?, ?)`);
@@ -144,13 +139,8 @@ const pedItemInsert = db.prepare(`
 `);
 
 const adminId = db.prepare('SELECT id FROM users WHERE email = ?').get('admin@publilegal.com.br').id;
+const userId = db.prepare('SELECT id FROM users WHERE email = ?').get('user@publilegal.com.br').id;
 const opId = adminId; // legado: alguns pedidos antigos usam "responsavel_id" generico
-const atendId = db.prepare('SELECT id FROM users WHERE email = ?').get('atendimento@publilegal.com.br').id;
-const prepId = db.prepare('SELECT id FROM users WHERE email = ?').get('preparacao@publilegal.com.br').id;
-const envioId = db.prepare('SELECT id FROM users WHERE email = ?').get('envio@publilegal.com.br').id;
-const publiId = db.prepare('SELECT id FROM users WHERE email = ?').get('publicacao@publilegal.com.br').id;
-const faturId = db.prepare('SELECT id FROM users WHERE email = ?').get('faturamento@publilegal.com.br').id;
-const finanId = db.prepare('SELECT id FROM users WHERE email = ?').get('financeiro@publilegal.com.br').id;
 
 function novoPedido(cliente_id, contrato_id, data_sol, data_desejada, cat, desc, status, resp, itens) {
   const info = pedInsert.run(cliente_id, contrato_id, data_sol, data_desejada, cat, desc, status, resp);
@@ -270,10 +260,5 @@ for (const nf of allNfs) {
 console.log(`[seed] baixa automatica aplicada em ${allNfs.length} NF(s)`);
 
 console.log('\n[seed] PRONTO! Credenciais demo:');
-console.log('  admin@publilegal.com.br       / admin123  (Sócia)');
-console.log('  atendimento@publilegal.com.br / atend123  (Atendimento)');
-console.log('  preparacao@publilegal.com.br  / prep123   (Preparação)');
-console.log('  envio@publilegal.com.br       / envio123  (Envio)');
-console.log('  publicacao@publilegal.com.br  / publi123  (Publicação)');
-console.log('  faturamento@publilegal.com.br / fatur123  (Faturamento)');
-console.log('  financeiro@publilegal.com.br  / finan123  (Financeiro)');
+console.log('  admin@publilegal.com.br / admin123 (Admin — acesso total)');
+console.log('  user@publilegal.com.br  / user123  (Usuário — sem aprovação de faturamento, sem financeiro)');

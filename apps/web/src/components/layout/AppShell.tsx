@@ -19,18 +19,13 @@ const nav: NavItem[] = [
   { href: '/app/contratos', label: 'Contratos', icon: FileText },
   { href: '/app/clientes', label: 'Clientes', icon: Users },
   { href: '/app/veiculos', label: 'Veículos', icon: Truck },
-  { href: '/app/notas-fiscais', label: 'Notas fiscais', icon: Receipt, papel: ['admin', 'faturamento', 'financeiro'] },
-  { href: '/app/financeiro', label: 'Financeiro', icon: BarChart3, papel: ['admin', 'financeiro', 'faturamento'] },
+  { href: '/app/notas-fiscais', label: 'Notas fiscais', icon: Receipt, papel: ['admin'] },
+  { href: '/app/financeiro', label: 'Financeiro', icon: BarChart3, papel: ['admin'] },
 ];
 
 const PAPEIS_LABEL: Record<string, { label: string; cor: string }> = {
-  admin:       { label: 'Sócia',           cor: 'bg-brand-100 text-brand-800' },
-  atendimento: { label: 'Atendimento',     cor: 'bg-sky-100 text-sky-700' },
-  preparacao:  { label: 'Preparação',      cor: 'bg-amber-100 text-amber-700' },
-  envio:       { label: 'Envio',           cor: 'bg-indigo-100 text-indigo-700' },
-  publicacao:  { label: 'Publicação',      cor: 'bg-teal-100 text-teal-700' },
-  faturamento: { label: 'Faturamento',     cor: 'bg-pink-100 text-pink-700' },
-  financeiro:  { label: 'Financeiro',      cor: 'bg-accent-100 text-accent-700' },
+  admin: { label: 'Admin',  cor: 'bg-brand-100 text-brand-800' },
+  user:  { label: 'Usuário', cor: 'bg-sky-100 text-sky-700' },
 };
 
 // notificações mock (futuramente viriam do backend)

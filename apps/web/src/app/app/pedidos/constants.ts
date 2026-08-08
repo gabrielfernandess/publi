@@ -34,20 +34,10 @@ export const FRONT_TRANSICOES: Record<string, string[]> = {
 
 // Cada papel tem um CONJUNTO de etapas em que pode ESTAR (e mover pedidos pra elas).
 // admin: todas
-// atendimento: até cliente_atendido (operacional, nao fatura)
-// preparacao: solicitada → aguardando_envio
-// envio: em_preparacao → aguardando_publicacao
-// publicacao: aguardando_publicacao → cliente_atendido
-// faturamento: cliente_atendido → nf_emitida (decisao + emissao da NF)
-// financeiro: nf_emitida → recebido (baixa da NF)
+// user:  ate cliente_atendido (operacional, NAO fatura nem baixa NF)
 export const PAPEIS_ETAPAS: Record<string, string[]> = {
   admin: STATUS_LIST.map((s) => s.id),
-  atendimento: ['solicitada', 'em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
-  preparacao: ['solicitada', 'em_preparacao', 'aguardando_envio'],
-  envio: ['em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao'],
-  publicacao: ['aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
-  faturamento: ['cliente_atendido', 'aprovacao_faturamento', 'aguardando_nf', 'nf_emitida'],
-  financeiro: ['nf_emitida', 'aguardando_pagamento', 'recebido'],
+  user: ['solicitada', 'em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
 };
 
 export function canMoveFront(papel: string, from: string, to: string): boolean {

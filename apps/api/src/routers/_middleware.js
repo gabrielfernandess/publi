@@ -7,24 +7,14 @@ const isDev = process.env.NODE_ENV !== 'production';
 export const COOKIE_NAME = 'pl_session';
 
 // =================== RBAC ===================
-export const PAPEIS_VALIDOS = ['admin', 'atendimento', 'preparacao', 'envio', 'publicacao', 'faturamento', 'financeiro'];
+export const PAPEIS_VALIDOS = ['admin', 'user'];
 
 // Cada papel tem um CONJUNTO de etapas em que pode ESTAR (e mover pedidos pra elas).
-// admin: todas
-// atendimento: até cliente_atendido (operacional, nao fatura)
-// preparacao: solicitada → aguardando_envio
-// envio: em_preparacao → aguardando_publicacao
-// publicacao: aguardando_publicacao → cliente_atendido
-// faturamento: cliente_atendido → nf_emitida (decisao + emissao da NF)
-// financeiro: nf_emitida → recebido (baixa da NF)
+// admin: todas (incluindo aprovacao de faturamento + baixa NF)
+// user:  ate cliente_atendido (operacional, NAO fatura nem baixa NF)
 export const TRANSICOES_POR_PAPEL = {
   admin: [], // preenchido abaixo com tudo
-  atendimento: ['solicitada', 'em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
-  preparacao: ['solicitada', 'em_preparacao', 'aguardando_envio'],
-  envio: ['em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao'],
-  publicacao: ['aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
-  faturamento: ['cliente_atendido', 'aprovacao_faturamento', 'aguardando_nf', 'nf_emitida'],
-  financeiro: ['nf_emitida', 'aguardando_pagamento', 'recebido'],
+  user: ['solicitada', 'em_preparacao', 'aguardando_envio', 'enviada', 'cust_pgtos', 'aguardando_publicacao', 'publicacao_recebida', 'cliente_atendido'],
 };
 
 // Mapa de transições válidas no fluxo (de -> para)
