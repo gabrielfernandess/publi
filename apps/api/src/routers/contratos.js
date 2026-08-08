@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import db from '../db.js';
+import { requirePapel } from './_middleware.js';
 
 const router = Router();
 
@@ -101,6 +102,7 @@ router.get('/:id', (req, res) => {
 
 router.post(
   '/',
+  requirePapel('admin'),
   [
     body('cliente_id').isInt().withMessage('Cliente obrigatorio'),
     body('data_inicio').isISO8601().withMessage('Data inicio invalida'),
@@ -137,6 +139,7 @@ router.post(
 );
 
 router.put('/:id',
+  requirePapel('admin'),
   [
     body('data_inicio').optional().isISO8601(),
     body('data_fim').optional().isISO8601(),
@@ -178,7 +181,7 @@ router.put('/:id',
   }
 );
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requirePapel('admin'), (req, res) => {
   const exists = db.prepare('SELECT id FROM contratos WHERE id = ?').get(req.params.id);
   if (!exists) return res.status(404).json({ error: 'Contrato nao encontrado' });
   db.prepare('UPDATE contratos SET status = ? WHERE id = ?').run('encerrado', req.params.id);

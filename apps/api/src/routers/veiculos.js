@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import db from '../db.js';
+import { requirePapel } from './_middleware.js';
 
 const router = Router();
 
@@ -27,6 +28,7 @@ router.get('/:id', (req, res) => {
 
 router.post(
   '/',
+  requirePapel('admin'),
   [
     body('nome').isLength({ min: 2 }).withMessage('Nome obrigatorio'),
     body('tipo').isIn(['dou', 'doe', 'jornal']).withMessage('Tipo invalido'),
@@ -46,6 +48,7 @@ router.post(
 );
 
 router.put('/:id',
+  requirePapel('admin'),
   [
     body('nome').optional().isLength({ min: 2 }),
     body('tipo').optional().isIn(['dou', 'doe', 'jornal']),
@@ -70,7 +73,7 @@ router.put('/:id',
   }
 );
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requirePapel('admin'), (req, res) => {
   const exists = db.prepare('SELECT id FROM veiculos WHERE id = ?').get(req.params.id);
   if (!exists) return res.status(404).json({ error: 'Veiculo nao encontrado' });
   db.prepare('UPDATE veiculos SET ativo = 0 WHERE id = ?').run(req.params.id);

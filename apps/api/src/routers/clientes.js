@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import db from '../db.js';
+import { requirePapel } from './_middleware.js';
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.get('/:id', (req, res) => {
 // CRIAR
 router.post(
   '/',
+  requirePapel('admin'),
   [
     body('nome').isLength({ min: 2 }).withMessage('Nome obrigatorio'),
     body('tipo').isIn(['prefeitura', 'camara', 'autarquia', 'outros']).withMessage('Tipo invalido'),
@@ -62,6 +64,7 @@ router.post(
 
 // ATUALIZAR
 router.put('/:id',
+  requirePapel('admin'),
   [
     body('nome').optional().isLength({ min: 2 }),
     body('tipo').optional().isIn(['prefeitura', 'camara', 'autarquia', 'outros']),
@@ -87,7 +90,7 @@ router.put('/:id',
 );
 
 // DELETAR (soft delete)
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requirePapel('admin'), (req, res) => {
   const exists = db.prepare('SELECT id FROM clientes WHERE id = ?').get(req.params.id);
   if (!exists) return res.status(404).json({ error: 'Cliente nao encontrado' });
   db.prepare('UPDATE clientes SET ativo = 0 WHERE id = ?').run(req.params.id);

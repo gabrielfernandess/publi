@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Truck, Globe2, Building2, Newspaper } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Truck, Globe2, Building2, Newspaper, Lock } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -34,6 +35,7 @@ const estados = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG
 const emptyForm = { nome: '', tipo: 'jornal' as Veiculo['tipo'], estado: '', custo_cm: 0 };
 
 export default function VeiculosPage() {
+  const isAdmin = useIsAdmin();
   const [data, setData] = useState<Veiculo[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,7 +94,14 @@ export default function VeiculosPage() {
         title="Veículos"
         description="Diários Oficiais e Jornais de Grande Circulação"
         actions={
-          <Button variant="primary" onClick={openNew}><Plus className="w-4 h-4" />Novo veículo</Button>
+          isAdmin ? (
+            <Button variant="primary" onClick={openNew}><Plus className="w-4 h-4" />Novo veículo</Button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 bg-ink-100 px-2.5 py-1.5 rounded-md">
+              <Lock className="w-3.5 h-3.5" />
+              Somente admin pode cadastrar
+            </span>
+          )
         }
       />
 
@@ -118,8 +127,12 @@ export default function VeiculosPage() {
           <EmptyState
             icon={<Truck className="w-12 h-12" />}
             title="Nenhum veículo cadastrado"
-            description="Aqui entram os diários onde vocês publicam: DOU, DOE e os jornais de grande circulação de cada estado."
-            action={<Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro veículo</Button>}
+            description={isAdmin
+              ? "Aqui entram os diários onde vocês publicam: DOU, DOE e os jornais de grande circulação de cada estado."
+              : "Quando um admin cadastrar o primeiro veículo, ele aparece aqui."}
+            action={isAdmin
+              ? <Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro veículo</Button>
+              : undefined}
           />
         ) : (
           <Table>
@@ -150,10 +163,17 @@ export default function VeiculosPage() {
                     <TD>{v.estado ? <Badge variant="outline">{v.estado}</Badge> : <span className="text-ink-400 text-sm">—</span>}</TD>
                     <TD><span className="font-semibold text-ink-900">{format.brl(v.custo_cm)}</span></TD>
                     <TD>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(v)} className="p-1.5 text-ink-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors"><Edit2 className="w-4 h-4" /></button>
-                        <button onClick={() => onDelete(v)} className="p-1.5 text-ink-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => openEdit(v)} className="p-1.5 text-ink-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors"><Edit2 className="w-4 h-4" /></button>
+                          <button onClick={() => onDelete(v)} className="p-1.5 text-ink-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-ink-400 justify-end w-full">
+                          <Lock className="w-3 h-3" />
+                          Somente leitura
+                        </span>
+                      )}
                     </TD>
                   </TR>
                 );

@@ -54,10 +54,10 @@ export default function PerfilPage() {
             <ul className="mt-4 space-y-2 text-sm">
               <PermissaoItem ok={true} texto="Ver dashboard e KPIs" />
               <PermissaoItem ok={true} texto="Acompanhar kanban de pedidos" />
-              <PermissaoItem ok={user.papel === 'admin' || user.papel === 'faturamento'} texto="Importar NFs e aprovar faturamento" />
-              <PermissaoItem ok={user.papel === 'admin' || user.papel === 'financeiro'} texto="Marcar NFs como pagas" />
+              <PermissaoItem ok={user.papel === 'admin'} texto="Importar NFs e aprovar faturamento" />
+              <PermissaoItem ok={user.papel === 'admin'} texto="Marcar NFs como pagas" />
               <PermissaoItem ok={user.papel === 'admin'} texto="Cancelar NFs e excluir registros" />
-              <PermissaoItem ok={user.papel === 'admin' || user.papel === 'faturamento' || user.papel === 'financeiro'} texto="Acessar módulo Financeiro completo" />
+              <PermissaoItem ok={user.papel === 'admin'} texto="Acessar módulo Financeiro completo" />
             </ul>
           </CardBody>
         </Card>

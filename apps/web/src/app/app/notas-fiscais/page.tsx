@@ -69,8 +69,8 @@ export default function NotasFiscaisPage() {
   const [clientes, setClientes] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
 
-  const canImport = user?.papel === 'admin' || user?.papel === 'faturamento';
-  const canPagar = user?.papel === 'admin' || user?.papel === 'financeiro';
+  const canImport = user?.papel === 'admin';
+  const canPagar = user?.papel === 'admin';
   const canCancelar = user?.papel === 'admin';
 
   // busca direto quando muda o filtro (sem depender de state assíncrono)

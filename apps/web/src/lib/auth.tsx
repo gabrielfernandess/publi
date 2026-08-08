@@ -7,8 +7,12 @@ export type User = {
   id: number;
   email: string;
   nome: string;
-  papel: 'admin' | 'atendimento' | 'preparacao' | 'envio' | 'publicacao' | 'faturamento' | 'financeiro';
+  papel: 'admin' | 'user';
 };
+
+export function isAdmin(user: User | null | undefined): boolean {
+  return user?.papel === 'admin';
+}
 
 type AuthCtx = {
   user: User | null;
@@ -55,4 +59,10 @@ export function useAuth() {
   const v = useContext(Ctx);
   if (!v) throw new Error('useAuth deve ser usado dentro de <AuthProvider>');
   return v;
+}
+
+/** Hook utilitario: true se o usuario logado for admin. */
+export function useIsAdmin(): boolean {
+  const { user } = useAuth();
+  return isAdmin(user);
 }

@@ -12,8 +12,8 @@ type Props = {
 export function Stepper({ currentId, onSelect }: Props) {
   const currentIdx = STATUS_LIST.findIndex((s) => s.id === currentId);
   return (
-    <div className="overflow-x-auto -mx-2 px-2 pb-1">
-      <div className="flex items-center gap-1 min-w-max">
+    <div className="-mx-1 px-1">
+      <div className="flex flex-wrap items-center gap-1.5">
         {STATUS_LIST.map((s, i) => {
           const isPast = i < currentIdx;
           const isCurrent = i === currentIdx;
@@ -27,7 +27,7 @@ export function Stepper({ currentId, onSelect }: Props) {
               onClick={() => clickable && onSelect?.(s.id)}
               disabled={isLocked}
               className={cn(
-                'group flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all',
+                'group inline-flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
                 isCurrent && 'bg-brand-50 text-brand-800 ring-2 ring-brand-300',
                 isPast && 'text-emerald-700 hover:bg-emerald-50 cursor-pointer',
                 isNext && 'text-brand-600 hover:bg-brand-50/50 cursor-pointer ring-1 ring-brand-200',
@@ -45,7 +45,7 @@ export function Stepper({ currentId, onSelect }: Props) {
               )}>
                 {isLocked ? <Lock className="w-3 h-3" /> : isPast ? <Check className="w-3 h-3" /> : s.emoji}
               </span>
-              <span className="whitespace-nowrap hidden md:inline">{s.label}</span>
+              <span className="hidden md:inline">{s.label}</span>
             </button>
           );
         })}

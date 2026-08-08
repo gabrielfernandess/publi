@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, MapPin, Mail, Phone, Building2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, MapPin, Mail, Phone, Building2, Lock } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -43,6 +44,7 @@ const emptyForm = {
 };
 
 export default function ClientesPage() {
+  const isAdmin = useIsAdmin();
   const [data, setData] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -122,10 +124,17 @@ export default function ClientesPage() {
         title="Clientes"
         description="Prefeituras, câmaras e demais órgãos públicos atendidos"
         actions={
-          <Button variant="primary" onClick={openNew}>
-            <Plus className="w-4 h-4" />
-            Novo cliente
-          </Button>
+          isAdmin ? (
+            <Button variant="primary" onClick={openNew}>
+              <Plus className="w-4 h-4" />
+              Novo cliente
+            </Button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 bg-ink-100 px-2.5 py-1.5 rounded-md">
+              <Lock className="w-3.5 h-3.5" />
+              Somente admin pode cadastrar
+            </span>
+          )
         }
       />
 
@@ -159,8 +168,12 @@ export default function ClientesPage() {
           <EmptyState
             icon={<Building2 className="w-12 h-12" />}
             title="Nenhum cliente por aqui ainda"
-            description="Bora começar? Cadastre o primeiro órgão (prefeitura, câmara, autarquia...) pra dar vida ao sistema."
-            action={<Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro cliente</Button>}
+            description={isAdmin
+              ? "Bora começar? Cadastre o primeiro órgão (prefeitura, câmara, autarquia...) pra dar vida ao sistema."
+              : "Quando um admin cadastrar o primeiro cliente, ele aparece aqui."}
+            action={isAdmin
+              ? <Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro cliente</Button>
+              : undefined}
           />
         ) : (
           <Table>
@@ -200,14 +213,21 @@ export default function ClientesPage() {
                       ) : <span className="text-ink-400">—</span>}
                     </TD>
                     <TD>
-                      <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(c)} className="p-1.5 text-ink-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors" title="Editar">
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => onDelete(c)} className="p-1.5 text-ink-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Excluir">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      {isAdmin ? (
+                        <div className="flex items-center justify-end gap-1">
+                          <button onClick={() => openEdit(c)} className="p-1.5 text-ink-500 hover:text-brand-700 hover:bg-brand-50 rounded transition-colors" title="Editar">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => onDelete(c)} className="p-1.5 text-ink-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors" title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-ink-400 justify-end w-full">
+                          <Lock className="w-3 h-3" />
+                          Somente leitura
+                        </span>
+                      )}
                     </TD>
                   </TR>
                 );

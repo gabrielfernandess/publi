@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, FileText, AlertTriangle, Calendar, Eye } from 'lucide-react';
+import { Plus, Search, FileText, AlertTriangle, Calendar, Eye, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
@@ -62,6 +63,7 @@ const emptyForm = {
 };
 
 export default function ContratosPage() {
+  const isAdmin = useIsAdmin();
   const [data, setData] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -141,9 +143,16 @@ export default function ContratosPage() {
         title="Contratos"
         description="Acompanhe vigência, saldos de centímetros e valor contratado"
         actions={
-          <Button variant="primary" onClick={openNew}>
-            <Plus className="w-4 h-4" />Novo contrato
-          </Button>
+          isAdmin ? (
+            <Button variant="primary" onClick={openNew}>
+              <Plus className="w-4 h-4" />Novo contrato
+            </Button>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-500 bg-ink-100 px-2.5 py-1.5 rounded-md">
+              <Lock className="w-3.5 h-3.5" />
+              Somente admin pode cadastrar
+            </span>
+          )
         }
       />
 
@@ -169,8 +178,12 @@ export default function ContratosPage() {
           <EmptyState
             icon={<FileText className="w-12 h-12" />}
             title="Nenhum contrato por aqui"
-            description="Cada contrato amarra um cliente a um conjunto de veículos (DOU, DOE, jornal) com centímetro contratado. Cria o primeiro pra começar."
-            action={<Button onClick={openNew}><Plus className="w-4 h-4" />Criar primeiro contrato</Button>}
+            description={isAdmin
+              ? "Cada contrato amarra um cliente a um conjunto de veículos (DOU, DOE, jornal) com centímetro contratado. Cria o primeiro pra começar."
+              : "Quando um admin cadastrar o primeiro contrato, ele aparece aqui."}
+            action={isAdmin
+              ? <Button onClick={openNew}><Plus className="w-4 h-4" />Criar primeiro contrato</Button>
+              : undefined}
           />
         ) : (
           <Table>
