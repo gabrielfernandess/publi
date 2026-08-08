@@ -61,6 +61,7 @@ function loadPedido(id) {
     INNER JOIN veiculos v ON v.id = ci.veiculo_id
     WHERE pi.pedido_id = ?
   `).all(id);
+  p.arquivos_count = db.prepare('SELECT COUNT(*) AS n FROM pedido_arquivos WHERE pedido_id = ?').get(id).n;
   return p;
 }
 
@@ -234,8 +235,8 @@ router.patch('/:id/etapa/:etapa', (req, res) => {
   // Campos permitidos por etapa (whitelist)
   const CAMPOS = {
     solicitada: ['descricao', 'categoria_publicacao', 'data_desejada_publicacao',
-      'canal_recebimento', 'veiculos_solicitados', 'arquivo_word_path', 'arquivo_word_recebido_em',
-      'cliente_contato'],
+      'canal_recebimento', 'veiculos_solicitados', 'veiculo_unico', 'arquivo_word_path', 'arquivo_word_recebido_em',
+      'cliente_contato', 'cliente_contato_nome', 'cliente_contato_telefone', 'cliente_contato_email'],
     em_preparacao: ['observacoes_internas', 'observacoes_preparacao', 'pasta_cliente_path',
       'formatado_dou', 'formatado_doe', 'formatado_jornal', 'revisao_ortografica'],
     aguardando_envio: ['observacoes_internas', 'previsao_envio', 'janela_envio'],

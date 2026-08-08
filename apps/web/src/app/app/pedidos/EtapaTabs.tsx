@@ -198,13 +198,6 @@ function AbaSolicitacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void
   );
 }
 
-      <Textarea label="Descrição" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Detalhes do que precisa publicar..." />
-
-      <SaveButton onClick={onSave} saving={saving} />
-    </div>
-  );
-}
-
 function AbaPreparacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void }) {
   const [form, setForm] = useState({
     observacoes_preparacao: pedido.observacoes_preparacao || '',
