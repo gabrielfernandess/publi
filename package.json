@@ -1,0 +1,18 @@
+{
+  "name": "publi-legal",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sistema de gestão de publicidade legal (Publi Legal)",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:api": "pnpm --filter @publi-legal/api dev",
+    "dev:web": "pnpm --filter @publi-legal/web dev",
+    "build": "pnpm -r build",
+    "seed": "pnpm --filter @publi-legal/api seed",
+    "smoke": "node scripts/smoke.cjs"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  }
+}
