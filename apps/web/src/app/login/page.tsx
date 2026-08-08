@@ -3,10 +3,11 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Scale, Eye, EyeOff, LogIn, ArrowLeft, Mail, LifeBuoy, CheckCircle2 } from 'lucide-react';
+import { Scale, Eye, EyeOff, LogIn, ArrowLeft, Mail, LifeBuoy, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { api } from '@/lib/api';
 
 const SUPORTE_EMAIL = 'suporte@publilegal.com.br';
 
@@ -24,13 +25,33 @@ function LoginForm() {
   const [lembrar, setLembrar] = useState(true);
   const [recuperarOpen, setRecuperarOpen] = useState(false);
   const [recuperarEmail, setRecuperarEmail] = useState('');
+  const [recuperarEnviando, setRecuperarEnviando] = useState(false);
   const [recuperarEnviado, setRecuperarEnviado] = useState(false);
+  const [recuperarDevLink, setRecuperarDevLink] = useState<string | null>(null);
+  const [recuperarErro, setRecuperarErro] = useState<string | null>(null);
 
-  const onRecuperar = (e: React.FormEvent) => {
+  const onRecuperar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recuperarEmail) return;
-    // MVP: mostra confirmação visual. Em produção, isto dispararia um e-mail via /api/auth/recuperar.
-    setRecuperarEnviado(true);
+    setRecuperarEnviando(true);
+    setRecuperarErro(null);
+    try {
+      const resp = await api.post<{ ok: boolean; devLink?: string }>('/auth/recuperar', { email: recuperarEmail });
+      setRecuperarEnviado(true);
+      if (resp?.devLink) setRecuperarDevLink(resp.devLink);
+    } catch (err: any) {
+      setRecuperarErro(err?.message || 'Nao foi possivel solicitar a recuperacao.');
+    } finally {
+      setRecuperarEnviando(false);
+    }
+  };
+
+  const abrirModalRecuperar = () => {
+    setRecuperarOpen(true);
+    setRecuperarEnviado(false);
+    setRecuperarDevLink(null);
+    setRecuperarErro(null);
+    setRecuperarEmail(email);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -104,7 +125,7 @@ function LoginForm() {
         </label>
         <button
           type="button"
-          onClick={() => { setRecuperarOpen(true); setRecuperarEnviado(false); setRecuperarEmail(email); }}
+          onClick={abrirModalRecuperar}
           className="text-brand-600 hover:text-brand-700 font-medium hover:underline"
         >
           Esqueci minha senha
@@ -152,19 +173,40 @@ function LoginForm() {
           </div>
 
           {recuperarEnviado ? (
-            <div className="px-6 py-8 text-center">
-              <div className="w-12 h-12 rounded-full bg-brand-50 mx-auto flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-brand-600" />
+            <div className="px-6 py-6">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-full bg-brand-50 mx-auto flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-brand-600" />
+                </div>
+                <p className="mt-4 text-sm text-ink-800 font-medium">Se o e-mail estiver cadastrado, enviaremos um link</p>
+                <p className="mt-1 text-xs text-ink-500 max-w-xs mx-auto">
+                  O link expira em 1 hora. Confira tambem a caixa de spam.
+                </p>
               </div>
-              <p className="mt-4 text-sm text-ink-800 font-medium">Solicitação registrada</p>
-              <p className="mt-1 text-xs text-ink-500 max-w-xs mx-auto">
-                Em produção, você receberia um link no e-mail informado. Por enquanto, entre em contato com a administração.
-              </p>
+              {recuperarDevLink && (
+                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+                    Modo dev — link direto
+                  </p>
+                  <p className="mt-1 text-[11px] text-amber-700">
+                    Em desenvolvimento, exibimos o link em vez de enviar e-mail. Em producao, esta caixa some.
+                  </p>
+                  <a
+                    href={recuperarDevLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-amber-900 hover:text-amber-700 break-all"
+                  >
+                    Abrir link de redefinicao
+                    <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                  </a>
+                </div>
+              )}
               <Button
                 variant="primary"
                 size="md"
                 rounded="md"
-                className="mt-5"
+                className="mt-5 w-full"
                 onClick={() => setRecuperarOpen(false)}
               >
                 Entendi
@@ -182,11 +224,19 @@ function LoginForm() {
                 autoComplete="email"
                 rounded="md"
               />
+              {recuperarErro && (
+                <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                  {recuperarErro}
+                </div>
+              )}
+              <p className="text-xs text-ink-500">
+                Vamos enviar um link pra redefinir sua senha. O link expira em 1 hora.
+              </p>
               <div className="flex items-center justify-end gap-2">
                 <Button type="button" variant="ghost" size="md" rounded="md" onClick={() => setRecuperarOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" variant="primary" size="md" rounded="md">
+                <Button type="submit" variant="primary" size="md" rounded="md" loading={recuperarEnviando}>
                   Enviar link
                 </Button>
               </div>
