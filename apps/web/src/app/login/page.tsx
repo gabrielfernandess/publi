@@ -3,20 +3,12 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Scale, Eye, EyeOff, LogIn, ArrowLeft, ShieldCheck, FileText, Wallet, Users, Truck, Building2 } from 'lucide-react';
+import { Scale, Eye, EyeOff, LogIn, ArrowLeft, Mail, LifeBuoy, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AuthProvider, useAuth } from '@/lib/auth';
 
-const CREDENTIALS = [
-  { papel: 'Sócia (admin)', email: 'admin@publilegal.com.br', senha: 'admin123', icon: ShieldCheck, cor: 'text-brand-700' },
-  { papel: 'Atendimento', email: 'atendimento@publilegal.com.br', senha: 'atend123', icon: Building2, cor: 'text-brand-600' },
-  { papel: 'Preparação', email: 'preparacao@publilegal.com.br', senha: 'prep123', icon: FileText, cor: 'text-brand-600' },
-  { papel: 'Envio', email: 'envio@publilegal.com.br', senha: 'envio123', icon: Truck, cor: 'text-brand-600' },
-  { papel: 'Publicação', email: 'publicacao@publilegal.com.br', senha: 'publi123', icon: FileText, cor: 'text-brand-600' },
-  { papel: 'Faturamento', email: 'faturamento@publilegal.com.br', senha: 'fatur123', icon: Wallet, cor: 'text-brand-600' },
-  { papel: 'Financeiro', email: 'financeiro@publilegal.com.br', senha: 'finan123', icon: Wallet, cor: 'text-brand-600' },
-];
+const SUPORTE_EMAIL = 'suporte@publilegal.com.br';
 
 function LoginForm() {
   const router = useRouter();
@@ -29,6 +21,17 @@ function LoginForm() {
   const [show, setShow] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [lembrar, setLembrar] = useState(true);
+  const [recuperarOpen, setRecuperarOpen] = useState(false);
+  const [recuperarEmail, setRecuperarEmail] = useState('');
+  const [recuperarEnviado, setRecuperarEnviado] = useState(false);
+
+  const onRecuperar = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recuperarEmail) return;
+    // MVP: mostra confirmação visual. Em produção, isto dispararia um e-mail via /api/auth/recuperar.
+    setRecuperarEnviado(true);
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +48,7 @@ function LoginForm() {
   };
 
   return (
+    <>
     <form onSubmit={onSubmit} className="space-y-5">
       <Input
         label="E-mail"
@@ -88,30 +92,110 @@ function LoginForm() {
         Entrar no sistema
       </Button>
 
-      <div className="pt-4 border-t border-ink-100">
-        <p className="text-xs font-semibold text-ink-600 mb-2 text-center">Credenciais demo (7 papéis):</p>
-        <div className="space-y-1 max-h-72 overflow-y-auto">
-          {CREDENTIALS.map((c) => {
-            const Icon = c.icon;
-            return (
-              <button
-                key={c.email}
-                type="button"
-                onClick={() => { setEmail(c.email); setSenha(c.senha); }}
-                className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-ink-50 transition-colors group"
-              >
-                <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${c.cor}`} />
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-semibold text-ink-800">{c.papel}</div>
-                  <div className="text-[10px] text-ink-500 truncate">{c.email} / {c.senha}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <p className="text-[10px] text-ink-400 text-center mt-2">Clique numa credencial pra preencher</p>
+      <div className="flex items-center justify-between pt-1 text-sm">
+        <label className="inline-flex items-center gap-2 text-ink-600 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={lembrar}
+            onChange={(e) => setLembrar(e.target.checked)}
+            className="w-4 h-4 rounded border-ink-300 text-brand-600 focus:ring-2 focus:ring-brand-200 cursor-pointer"
+          />
+          Manter conectado
+        </label>
+        <button
+          type="button"
+          onClick={() => { setRecuperarOpen(true); setRecuperarEnviado(false); setRecuperarEmail(email); }}
+          className="text-brand-600 hover:text-brand-700 font-medium hover:underline"
+        >
+          Esqueci minha senha
+        </button>
       </div>
+
+      <div className="relative my-2">
+        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+          <div className="w-full border-t border-ink-100" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-ink-400">suporte</span>
+        </div>
+      </div>
+
+      <a
+        href={`mailto:${SUPORTE_EMAIL}?subject=Problema%20com%20acesso%20ao%20Publi%20Legal`}
+        className="flex items-center gap-3 rounded-lg border border-ink-200 bg-ink-50/50 hover:bg-ink-50 hover:border-brand-200 transition-colors px-3.5 py-2.5 group"
+      >
+        <span className="w-8 h-8 rounded-md bg-white border border-ink-200 flex items-center justify-center group-hover:border-brand-300">
+          <LifeBuoy className="w-4 h-4 text-brand-600" />
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-medium text-ink-800">Problemas pra entrar?</span>
+          <span className="block text-xs text-ink-500 truncate">Fale com o suporte — {SUPORTE_EMAIL}</span>
+        </span>
+        <Mail className="w-4 h-4 text-ink-400 group-hover:text-brand-600" />
+      </a>
     </form>
+
+    {recuperarOpen && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4"
+        onClick={() => setRecuperarOpen(false)}
+      >
+        <div
+          className="w-full max-w-md bg-white rounded-xl shadow-2xl border border-ink-200 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-6 pt-5 pb-3 border-b border-ink-100">
+            <h3 className="text-lg font-semibold text-ink-900">Recuperar acesso</h3>
+            <p className="text-sm text-ink-500 mt-1">
+              Informe seu e-mail e enviaremos as instruções pra redefinir sua senha.
+            </p>
+          </div>
+
+          {recuperarEnviado ? (
+            <div className="px-6 py-8 text-center">
+              <div className="w-12 h-12 rounded-full bg-brand-50 mx-auto flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6 text-brand-600" />
+              </div>
+              <p className="mt-4 text-sm text-ink-800 font-medium">Solicitação registrada</p>
+              <p className="mt-1 text-xs text-ink-500 max-w-xs mx-auto">
+                Em produção, você receberia um link no e-mail informado. Por enquanto, entre em contato com a administração.
+              </p>
+              <Button
+                variant="primary"
+                size="md"
+                rounded="md"
+                className="mt-5"
+                onClick={() => setRecuperarOpen(false)}
+              >
+                Entendi
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={onRecuperar} className="px-6 py-5 space-y-4">
+              <Input
+                label="E-mail"
+                type="email"
+                value={recuperarEmail}
+                onChange={(e) => setRecuperarEmail(e.target.value)}
+                placeholder="voce@publilegal.com.br"
+                required
+                autoComplete="email"
+                rounded="md"
+              />
+              <div className="flex items-center justify-end gap-2">
+                <Button type="button" variant="ghost" size="md" rounded="md" onClick={() => setRecuperarOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="primary" size="md" rounded="md">
+                  Enviar link
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -133,10 +217,10 @@ export default function LoginPage() {
             </div>
           </Link>
           <div>
-            <h2 className="font-sans text-4xl font-extrabold text-balance">
+            <h2 className="font-sans text-4xl font-extrabold text-balance text-accent-300">
               O controle total da sua publicidade legal.
             </h2>
-            <p className="mt-4 text-white/70 text-balance max-w-md">
+            <p className="mt-4 text-white/80 text-balance max-w-md">
               Contratos, saldos de centímetros, kanban de pedidos, faturamento e financeiro — tudo num sistema só.
             </p>
           </div>

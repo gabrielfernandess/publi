@@ -31,6 +31,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# typescript
+*.tsbuildinfo
+
 # sqlite
 apps/api/data/*.sqlite
 apps/api/data/*.sqlite-shm
