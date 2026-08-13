@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Receipt, Calendar, AlertTriangle, Check, X, Download, MoreVertical, ChevronDown, Filter, FileCheck2, Wallet, Clock, Banknote, FileClock, TrendingUp } from 'lucide-react';
+import { Plus, Search, Receipt, Calendar, AlertTriangle, Check, X, Download, MoreVertical, ChevronDown, Filter, FileCheck2, Wallet, Clock, Banknote, FileClock, TrendingUp, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { Drawer } from '@/components/ui/Drawer';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -516,37 +517,67 @@ export default function NotasFiscaisPage() {
         )}
       </Modal>
 
-      {/* Modal: Detalhes */}
-      {openDetalhes && (
-        <Modal
-          open
-          onClose={() => setOpenDetalhes(null)}
-          title={`NF #${openDetalhes.numero}`}
-          size="lg"
-          footer={
-            <Button variant="primary" rounded="md" onClick={() => setOpenDetalhes(null)}>Fechar</Button>
-          }
-        >
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <span className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-pill text-sm font-semibold', STATUS_NF[openDetalhes.status].corBg, STATUS_NF[openDetalhes.status].corText)}>
-                {(() => { const Icon = STATUS_NF[openDetalhes.status].icon; return <Icon className="w-3.5 h-3.5" />; })()}
-                {STATUS_NF[openDetalhes.status].label}
-              </span>
-              <span className="text-2xl font-bold text-ink-900">{format.brl(openDetalhes.valor)}</span>
-            </div>
+      {/* Drawer: Detalhes da NF com stepper 5 etapas (Print 1 do cliente) */}
+      <Drawer
+        open={!!openDetalhes}
+        onClose={() => setOpenDetalhes(null)}
+        title={openDetalhes ? `NF #${openDetalhes.numero}` : ''}
+        description={openDetalhes ? `${openDetalhes.cliente_nome} • ${format.brl(openDetalhes.valor)}` : ''}
+        width="xl"
+        footer={
+          <>
+            <Button variant="ghost" rounded="md" onClick={() => setOpenDetalhes(null)}>Fechar</Button>
+            {openDetalhes && (openDetalhes.status === 'emitida' || openDetalhes.status === 'enviada') && canPagar && (
+              <Button variant="primary" rounded="md" onClick={() => { setOpenPagar(openDetalhes); setDataPagamento(new Date().toISOString().slice(0, 10)); }}>
+                <Check className="w-4 h-4" />Marcar como paga
+              </Button>
+            )}
+          </>
+        }
+      >
+        {openDetalhes && (
+          <div className="space-y-5">
+            <NfStepper status={openDetalhes.status} dataEmissao={openDetalhes.data_emissao} dataPagamento={openDetalhes.data_pagamento} />
+
             <div className="grid sm:grid-cols-2 gap-4 text-sm">
-              <div><div className="text-xs text-ink-500 uppercase tracking-wider">Cliente</div><div className="font-medium text-ink-900">{openDetalhes.cliente_nome}</div></div>
-              <div><div className="text-xs text-ink-500 uppercase tracking-wider">Localização</div><div className="font-medium text-ink-900">{openDetalhes.cliente_municipio}{openDetalhes.cliente_estado ? `/${openDetalhes.cliente_estado}` : '—'}</div></div>
-              <div><div className="text-xs text-ink-500 uppercase tracking-wider">Emissão</div><div className="font-medium text-ink-900">{format.data(openDetalhes.data_emissao)}</div></div>
-              <div><div className="text-xs text-ink-500 uppercase tracking-wider">Pagamento</div><div className="font-medium text-ink-900">{format.data(openDetalhes.data_pagamento)}</div></div>
+              <div>
+                <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Cliente</div>
+                <div className="flex items-center gap-2 font-medium text-ink-900">
+                  <Building2 className="w-4 h-4 text-ink-400" />
+                  {openDetalhes.cliente_nome}
+                </div>
+                <div className="text-xs text-ink-500 mt-1">{openDetalhes.cliente_municipio}{openDetalhes.cliente_estado ? `/${openDetalhes.cliente_estado}` : '—'}</div>
+              </div>
+              <div>
+                <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Emissão</div>
+                <div className="font-medium text-ink-900">{format.data(openDetalhes.data_emissao)}</div>
+              </div>
+              {openDetalhes.data_pagamento && (
+                <div>
+                  <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Pagamento</div>
+                  <div className="font-medium text-emerald-700">{format.data(openDetalhes.data_pagamento)}</div>
+                </div>
+              )}
               {openDetalhes.pedido_id && (
-                <div><div className="text-xs text-ink-500 uppercase tracking-wider">Pedido</div><div className="font-medium text-ink-900">#{openDetalhes.pedido_id}</div></div>
+                <div>
+                  <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Pedido vinculado</div>
+                  <Link href={`/app/pedidos/${openDetalhes.pedido_id}`} className="font-mono font-medium text-brand-700 hover:underline">
+                    #{openDetalhes.pedido_id}
+                  </Link>
+                </div>
               )}
               {openDetalhes.contrato_numero && (
-                <div><div className="text-xs text-ink-500 uppercase tracking-wider">Contrato</div><div className="font-medium text-ink-900">{openDetalhes.contrato_numero}</div></div>
+                <div>
+                  <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Contrato</div>
+                  <div className="font-mono font-medium text-ink-900">{openDetalhes.contrato_numero}</div>
+                </div>
               )}
+              <div>
+                <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Valor</div>
+                <div className="text-2xl font-bold text-ink-900">{format.brl(openDetalhes.valor)}</div>
+              </div>
             </div>
+
             {openDetalhes.observacoes && (
               <div>
                 <div className="text-xs text-ink-500 uppercase tracking-wider mb-1">Observações</div>
@@ -554,7 +585,70 @@ export default function NotasFiscaisPage() {
               </div>
             )}
           </div>
-        </Modal>
+        )}
+      </Drawer>
+    </div>
+  );
+}
+
+function NfStepper({ status, dataEmissao, dataPagamento }: { status: string; dataEmissao?: string; dataPagamento?: string | null }) {
+  // 1. Aprovação (admin digitando) -> se status === 'rascunho' (futuro) ou pending
+  // 2. Emissão da NF -> status === 'emitida' (saiu)
+  // 3. NF Emitida -> status === 'emitida' confirmada
+  // 4. Pagamento -> status === 'enviada' ou 'paga' (em cobrança)
+  // 5. Recebimento -> status === 'paga' + data_pagamento
+  // hoje temos: emitida | enviada | paga | cancelada
+  const isEmitida = status === 'emitida' || status === 'enviada' || status === 'paga';
+  const isPaga = status === 'paga';
+  const isCancelada = status === 'cancelada';
+  const isEnviada = status === 'enviada' || status === 'paga';
+
+  const etapas = [
+    { num: 1, label: 'Aprovação',  sub: 'Em aprovação',        done: !isCancelada,                current: false },
+    { num: 2, label: 'Emissão da NF', sub: 'Aguardando emissão', done: isEmitida,                  current: !isEmitida && !isCancelada },
+    { num: 3, label: 'NF Emitida',  sub: isEmitida ? 'Emitida' : 'Pendente', done: isEmitida, current: !isEmitida && !isCancelada },
+    { num: 4, label: 'Pagamento',   sub: isEnviada ? 'Em cobrança' : 'Aguardando', done: isEnviada, current: isEmitida && !isEnviada },
+    { num: 5, label: 'Recebimento', sub: isPaga ? (dataPagamento ? format.data(dataPagamento) : 'Confirmado') : 'Aguardando', done: isPaga, current: isEnviada && !isPaga },
+  ];
+
+  return (
+    <div className="rounded-lg border border-ink-200 bg-ink-50/50 p-4">
+      <div className="text-[10px] font-bold text-ink-500 uppercase tracking-wider mb-3">Fluxo da NF</div>
+      <div className="flex items-start gap-1">
+        {etapas.map((e, i) => {
+          const isLast = i === etapas.length - 1;
+          return (
+            <div key={e.num} className="flex-1 flex items-start gap-1 min-w-0">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div className={cn(
+                  'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors',
+                  e.done ? 'bg-brand-600 text-white border-brand-600' :
+                  e.current ? 'bg-white text-brand-700 border-brand-500 ring-2 ring-brand-100' :
+                  'bg-white text-ink-400 border-ink-200',
+                )}>
+                  {e.done ? <Check className="w-3.5 h-3.5" /> : e.num}
+                </div>
+                {!isLast && (
+                  <div className={cn('w-px h-6 mt-1', e.done ? 'bg-brand-600' : 'bg-ink-200')} />
+                )}
+              </div>
+              <div className="min-w-0 pb-2 -mt-0.5">
+                <div className={cn('text-[10px] font-bold uppercase tracking-wider', e.done ? 'text-brand-700' : e.current ? 'text-brand-600' : 'text-ink-400')}>
+                  {e.label}
+                </div>
+                <div className={cn('text-[10px] mt-0.5 truncate', e.done ? 'text-emerald-700' : 'text-ink-500')}>
+                  {e.sub}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {isCancelada && (
+        <div className="mt-3 rounded-md bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 flex items-center gap-2">
+          <X className="w-3.5 h-3.5" />
+          Esta NF foi cancelada e o saldo do contrato foi estornado.
+        </div>
       )}
     </div>
   );
