@@ -24,6 +24,7 @@ import pedidosRouter from './routers/pedidos.js';
 import dashboardRouter from './routers/dashboard.js';
 import notasFiscaisRouter from './routers/notas-fiscais.js';
 import financeiroRouter from './routers/financeiro.js';
+import faturamentoRouter from './routers/faturamento.js';
 import { authMiddleware } from './routers/_middleware.js';
 
 const app = express();
@@ -87,6 +88,7 @@ app.use('/api/pedidos', authMiddleware, pedidosRouter);
 app.use('/api/dashboard', authMiddleware, dashboardRouter);
 app.use('/api/notas-fiscais', authMiddleware, notasFiscaisRouter);
 app.use('/api/financeiro', authMiddleware, financeiroRouter);
+app.use('/api/faturamentos', authMiddleware, faturamentoRouter);
 
 // 404
 app.use((_req, res) => res.status(404).json({ error: 'Rota nao encontrada' }));

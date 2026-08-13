@@ -142,6 +142,34 @@ export const SCHEMA_SQL = `
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
   );
 
+  -- Sprint 13: Faturamento (agrupador de N pedidos -> 1 NF opcional)
+  -- Modela o "1 linha = 1 ciclo de faturamento" do Print 1 do cliente
+  CREATE TABLE IF NOT EXISTS faturamentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cliente_id INTEGER NOT NULL,
+    contrato_id INTEGER,
+    periodo_inicio TEXT NOT NULL,
+    periodo_fim TEXT NOT NULL,
+    valor_total REAL NOT NULL DEFAULT 0,
+    cm_total REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'em_aprovacao'
+      CHECK(status IN ('em_aprovacao','aprovado','nf_emitida','em_cobranca','recebido','cancelado')),
+    data_aprovacao TEXT,
+    data_emissao_nf TEXT,
+    numero_nf TEXT,
+    data_pagamento TEXT,
+    forma_cobranca TEXT,
+    observacoes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+    FOREIGN KEY (contrato_id) REFERENCES contratos(id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_faturamentos_cliente ON faturamentos(cliente_id);
+  CREATE INDEX IF NOT EXISTS idx_faturamentos_status ON faturamentos(status);
+  CREATE INDEX IF NOT EXISTS idx_faturamentos_periodo ON faturamentos(periodo_inicio, periodo_fim);
+
   CREATE TABLE IF NOT EXISTS pedido_boletos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     pedido_id INTEGER NOT NULL,
@@ -233,6 +261,10 @@ function migrate() {
     "ALTER TABLE pedidos ADD COLUMN processado_em TEXT",
     "ALTER TABLE pedidos ADD COLUMN qtd_correcoes INTEGER DEFAULT 0",
     "ALTER TABLE pedidos ADD COLUMN preview_revisao TEXT",  // JSON com antes/depois
+    // Sprint 13: vinculo com faturamento (Print 1 do cliente)
+    "ALTER TABLE pedidos ADD COLUMN faturamento_id INTEGER REFERENCES faturamentos(id) ON DELETE SET NULL",
+    // Sprint 13: vinculo direto NF <-> Faturamento (preserva historico)
+    "ALTER TABLE notas_fiscais ADD COLUMN faturamento_id INTEGER REFERENCES faturamentos(id) ON DELETE SET NULL",
   ];
   for (const sql of alters) {
     try { db.exec(sql); } catch (e) { /* coluna já existe, ignora */ }
