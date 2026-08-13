@@ -91,30 +91,30 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ============== SIDEBAR ============== */}
       <aside
         className={cn(
-          'fixed lg:sticky top-0 left-0 z-40 lg:z-auto w-64 h-screen bg-white border-r border-ink-100',
+          'fixed lg:sticky top-0 left-0 z-40 lg:z-auto w-64 h-screen bg-brand-900 text-white',
           'flex flex-col transition-transform flex-shrink-0',
           openSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}
-        <div className="px-5 py-5 border-b border-ink-100 flex items-center justify-between">
+        <div className="px-5 py-5 flex items-center justify-between">
           <Link href="/app/dashboard" className="flex items-center gap-2.5 group" onClick={() => setOpenSidebar(false)}>
             <div className="w-9 h-9 rounded-lg bg-lime-gradient flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
               <Scale className="w-4.5 h-4.5 text-brand-900" strokeWidth={2.5} />
             </div>
             <div className="leading-none">
-              <div className="font-serif font-extrabold text-ink-900 text-[15px] tracking-tight">Publi Legal</div>
-              <div className="text-[9px] text-brand-600 uppercase tracking-widest font-bold mt-0.5">Sistema</div>
+              <div className="font-serif font-extrabold text-white text-[15px] tracking-tight">Publi Legal</div>
+              <div className="text-[9px] text-lime-300 uppercase tracking-widest font-bold mt-0.5">Sistema</div>
             </div>
           </Link>
-          <button onClick={() => setOpenSidebar(false)} className="lg:hidden text-ink-500 p-1 -mr-1">
+          <button onClick={() => setOpenSidebar(false)} className="lg:hidden text-white/70 hover:text-white p-1 -mr-1">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
-          <p className="px-3 mb-2 text-[10px] font-bold text-ink-400 uppercase tracking-widest">Operação</p>
+          <p className="px-3 mb-2 text-[10px] font-bold text-white/50 uppercase tracking-widest">Operação</p>
           {navFiltrada.map((n) => {
             const active = isActive(n.href);
             return (
@@ -125,14 +125,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className={cn(
                   'group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                   active
-                    ? 'bg-brand-600 text-white shadow-soft'
-                    : 'text-ink-700 hover:bg-ink-50 hover:text-ink-900'
+                    ? 'bg-lime-gradient text-brand-900 font-bold shadow-soft'
+                    : 'text-white/85 hover:bg-white/10 hover:text-white'
                 )}
               >
-                <n.icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-white' : 'text-ink-500 group-hover:text-ink-800')} />
+                <n.icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-brand-900' : 'text-white/70 group-hover:text-white')} />
                 <span className="flex-1 truncate">{n.label}</span>
                 {n.badge && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 font-bold uppercase">{n.badge}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-900 font-bold uppercase">{n.badge}</span>
                 )}
               </Link>
             );
@@ -140,10 +140,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Footer do sidebar: usuário logado */}
-        <div className="p-3 border-t border-ink-100 bg-gradient-to-b from-white to-ink-50/30">
-          <div className="px-3 py-2.5 rounded-lg bg-white border border-ink-100 mb-2">
-            <div className="text-[10px] text-ink-500 uppercase tracking-wider font-semibold">Logado como</div>
-            <div className="text-sm font-semibold text-ink-900 truncate mt-0.5">{user?.nome}</div>
+        <div className="p-3">
+          <div className="px-3 py-2.5 rounded-lg bg-white/10 mb-2">
+            <div className="text-[10px] text-white/60 uppercase tracking-wider font-semibold">Logado como</div>
+            <div className="text-sm font-semibold text-white truncate mt-0.5">{user?.nome}</div>
             <span className={cn('inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider', papelInfo.cor)}>
               {papelInfo.label}
             </span>
@@ -162,7 +162,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ============== COLUNA PRINCIPAL (header + main) ============== */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* ============== TOP BAR ============== */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-ink-100">
+        <header className="sticky top-0 z-30 bg-brand-900 text-white">
           <div className="h-16 px-4 sm:px-6 flex items-center gap-3">
             {/* Mobile menu */}
             <button onClick={() => setOpenSidebar(true)} className="lg:hidden p-2 -ml-2 text-ink-700 hover:text-ink-900">
@@ -174,7 +174,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {/* Search (alinhado à direita) */}
             <div className="hidden md:block w-72 lg:w-96">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/60" />
                 <input
                   type="text"
                   value={searchQ}
@@ -185,7 +185,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     }
                   }}
                   placeholder="Buscar pedido, cliente, NF... (Enter)"
-                  className="w-full pl-10 pr-3 py-2 rounded-pill bg-ink-50 border border-transparent focus:bg-white focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-100 text-sm text-ink-900 placeholder:text-ink-400 transition-all"
+                  className="w-full pl-10 pr-3 py-2 rounded-pill bg-white/10 border border-white/20 focus:bg-white/20 focus:border-white/40 focus:outline-none text-sm text-white placeholder:text-white/50 transition-all"
                 />
 
               </div>
@@ -195,12 +195,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => { setOpenNotif(!openNotif); setOpenProfile(false); }}
-                className="relative p-2 text-ink-600 hover:text-ink-900 hover:bg-ink-50 rounded-pill transition-colors"
+                className="relative p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-pill transition-colors"
                 aria-label="Notificações"
               >
                 <Bell className="w-5 h-5" />
                 {MOCK_NOTIFS.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-brand-900" />
                 )}
               </button>
               {openNotif && (
@@ -239,16 +239,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => { setOpenProfile(!openProfile); setOpenNotif(false); }}
-                className="flex items-center gap-2 p-1 pr-2 hover:bg-ink-50 rounded-pill transition-colors"
+                className="flex items-center gap-2 p-1 pr-2 hover:bg-white/10 rounded-pill transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold text-sm shadow-soft">
+                <div className="w-9 h-9 rounded-full bg-lime-gradient flex items-center justify-center text-brand-900 font-bold text-sm shadow-soft">
                   {iniciais || <UserIcon className="w-4 h-4" />}
                 </div>
                 <div className="hidden md:block text-left">
-                  <div className="text-xs font-semibold text-ink-900 leading-tight">{user?.nome?.split(' ')[0]}</div>
-                  <div className="text-[10px] text-ink-500 leading-tight">{papelInfo.label}</div>
+                  <div className="text-xs font-semibold text-white leading-tight">{user?.nome?.split(' ')[0]}</div>
+                  <div className="text-[10px] text-white/60 leading-tight">{papelInfo.label}</div>
                 </div>
-                <ChevronDown className={cn('w-3.5 h-3.5 text-ink-500 transition-transform', openProfile && 'rotate-180')} />
+                <ChevronDown className={cn('w-3.5 h-3.5 text-white/70 transition-transform', openProfile && 'rotate-180')} />
               </button>
               {openProfile && (
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-ink-200 rounded-xl shadow-lift overflow-hidden animate-fade-in">
