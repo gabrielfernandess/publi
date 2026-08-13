@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Receipt, Calendar, AlertTriangle, Check, X, Download, MoreVertical, ChevronDown, Filter } from 'lucide-react';
+import { Plus, Search, Receipt, Calendar, AlertTriangle, Check, X, Download, MoreVertical, ChevronDown, Filter, FileCheck2, Wallet, Clock, Banknote, FileClock, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -68,6 +68,11 @@ export default function NotasFiscaisPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [clientes, setClientes] = useState<any[]>([]);
   const [pedidos, setPedidos] = useState<any[]>([]);
+  const [kpis, setKpis] = useState<{ em_aprovacao: { count: number; valor: number }; nf_emitidas: { count: number; valor: number }; a_receber: { count: number; valor: number }; em_atraso: { count: number; valor: number }; recebidas_mes: { count: number; valor: number } } | null>(null);
+
+  useEffect(() => {
+    api.get<{ data: typeof kpis }>('/api/notas-fiscais/kpis').then((r) => setKpis(r.data)).catch(() => {});
+  }, []);
 
   const canImport = user?.papel === 'admin';
   const canPagar = user?.papel === 'admin';
@@ -168,8 +173,8 @@ export default function NotasFiscaisPage() {
   return (
     <div>
       <PageHeader
-        title="Notas fiscais"
-        description="Aqui você importa e acompanha as NFs emitidas pelo Conta Azul — sem digitar duas vezes."
+        title="Faturamento"
+        description="Módulo 2 — financeiro, NFs e relatórios. Centralize aqui o que sai do Conta Azul."
         actions={
           canImport && (
             <Button variant="primary" onClick={openNew} rounded="md">
@@ -179,38 +184,51 @@ export default function NotasFiscaisPage() {
         }
       />
 
-      {/* KPIs no topo — visão executiva do caixa */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <Card className="p-5">
-          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">A receber</p>
-          <p className="mt-2 text-2xl font-bold text-amber-700">{format.brl(totalAReceber)}</p>
-          <p className="text-xs text-ink-500 mt-1">
-            {data.filter((n) => n.status === 'emitida' || n.status === 'enviada').length} NF(s) em aberto
-          </p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">Já recebido</p>
-          <p className="mt-2 text-2xl font-bold text-emerald-700">{format.brl(totalRecebido)}</p>
-          <p className="text-xs text-ink-500 mt-1">
-            {data.filter((n) => n.status === 'paga').length} NF(s) pagas
-          </p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">Atrasadas (+60d)</p>
-          <p className={cn('mt-2 text-2xl font-bold', nfsAtrasadas > 0 ? 'text-red-600' : 'text-ink-900')}>
-            {nfsAtrasadas}
-          </p>
-          <p className="text-xs text-ink-500 mt-1">
-            {nfsAtrasadas > 0 ? 'precisam de cobrança ativa' : 'nenhuma atrasada'}
-          </p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">Canceladas</p>
-          <p className="mt-2 text-2xl font-bold text-ink-500">{format.brl(totalCancelado)}</p>
-          <p className="text-xs text-ink-500 mt-1">
-            {data.filter((n) => n.status === 'cancelada').length} NF(s) canceladas
-          </p>
-        </Card>
+      {/* KPIs no topo — visão executiva do caixa (Print 1 do cliente) */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
+        <KpiCard
+          label="Em aprovação"
+          value={kpis?.em_aprovacao.count ?? '—'}
+          unit="lotes"
+          color="sky"
+          icon={FileClock}
+        />
+        <KpiCard
+          label="NF emitidas"
+          value={kpis ? format.brl(kpis.nf_emitidas.valor) : '—'}
+          unit={`${kpis?.nf_emitidas.count ?? 0} lotes`}
+          color="emerald"
+          icon={FileCheck2}
+        />
+        <KpiCard
+          label="A receber"
+          value={kpis ? format.brl(kpis.a_receber.valor) : '—'}
+          unit={`${kpis?.a_receber.count ?? 0} lotes`}
+          color="amber"
+          icon={Wallet}
+        />
+        <KpiCard
+          label="Em atraso"
+          value={kpis ? format.brl(kpis.em_atraso.valor) : '—'}
+          unit={`${kpis?.em_atraso.count ?? 0} lotes`}
+          color="red"
+          icon={AlertTriangle}
+          highlight={Boolean(kpis && kpis.em_atraso.count > 0)}
+        />
+        <KpiCard
+          label="Recebidos (mês)"
+          value={kpis ? format.brl(kpis.recebidas_mes.valor) : '—'}
+          unit={`${kpis?.recebidas_mes.count ?? 0} lotes`}
+          color="emerald"
+          icon={Banknote}
+        />
+        <KpiCard
+          label="Já recebido"
+          value={format.brl(totalRecebido)}
+          unit={`${data.filter((n) => n.status === 'paga').length} NF(s)`}
+          color="brand"
+          icon={TrendingUp}
+        />
       </div>
 
       {/* Filtros funcionais */}
@@ -539,5 +557,39 @@ export default function NotasFiscaisPage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+type KpiProps = {
+  label: string;
+  value: string | number;
+  unit?: string;
+  color?: 'sky' | 'emerald' | 'amber' | 'red' | 'brand';
+  icon?: any;
+  highlight?: boolean;
+};
+
+function KpiCard({ label, value, unit, color = 'brand', icon: Icon, highlight }: KpiProps) {
+  const colorMap: Record<string, { bg: string; icon: string; ring: string }> = {
+    sky:     { bg: 'bg-sky-50',     icon: 'bg-sky-100 text-sky-700',     ring: '' },
+    emerald: { bg: 'bg-emerald-50', icon: 'bg-emerald-100 text-emerald-700', ring: '' },
+    amber:   { bg: 'bg-amber-50',   icon: 'bg-amber-100 text-amber-700',   ring: '' },
+    red:     { bg: 'bg-red-50',     icon: 'bg-red-100 text-red-700',     ring: 'ring-2 ring-red-200' },
+    brand:   { bg: 'bg-brand-50',   icon: 'bg-brand-100 text-brand-700',   ring: '' },
+  };
+  const c = colorMap[color];
+  return (
+    <Card className={cn('p-4 transition-shadow', c.bg, highlight && c.ring)}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] text-ink-500 uppercase tracking-wider font-semibold">{label}</p>
+        {Icon && (
+          <div className={cn('w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0', c.icon)}>
+            <Icon className="w-3.5 h-3.5" />
+          </div>
+        )}
+      </div>
+      <p className="mt-2 text-lg font-bold text-ink-900 truncate" title={String(value)}>{value}</p>
+      {unit && <p className="text-[10px] text-ink-500 mt-0.5">{unit}</p>}
+    </Card>
   );
 }

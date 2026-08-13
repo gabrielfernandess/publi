@@ -19,7 +19,7 @@ const nav: NavItem[] = [
   { href: '/app/contratos', label: 'Contratos', icon: FileText },
   { href: '/app/clientes', label: 'Clientes', icon: Users },
   { href: '/app/veiculos', label: 'Veículos', icon: Truck },
-  { href: '/app/notas-fiscais', label: 'Notas fiscais', icon: Receipt, papel: ['admin'] },
+  { href: '/app/notas-fiscais', label: 'Faturamento', icon: Receipt, papel: ['admin'] },
   { href: '/app/financeiro', label: 'Financeiro', icon: BarChart3, papel: ['admin'] },
 ];
 

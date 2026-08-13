@@ -49,6 +49,28 @@ function estornarSaldoPorNF(pedidoId) {
   }
 }
 
+// KPIs - visao executiva do caixa/faturamento
+router.get('/kpis', (req, res) => {
+  const nfEmitida = db.prepare(`SELECT COALESCE(SUM(valor), 0) AS v, COUNT(*) AS c FROM notas_fiscais WHERE status = 'emitida'`).get();
+  const abertas = db.prepare(`SELECT COALESCE(SUM(valor), 0) AS v, COUNT(*) AS c FROM notas_fiscais WHERE status IN ('emitida', 'enviada')`).get();
+  const atrasadas = db.prepare(`SELECT COALESCE(SUM(valor), 0) AS v, COUNT(*) AS c FROM notas_fiscais WHERE status IN ('emitida', 'enviada') AND julianday('now') - julianday(data_emissao) > 60`).get();
+  const inicioMes = new Date();
+  inicioMes.setDate(1);
+  const inicioMesISO = inicioMes.toISOString().slice(0, 10);
+  const recebidasMes = db.prepare(`SELECT COALESCE(SUM(valor), 0) AS v, COUNT(*) AS c FROM notas_fiscais WHERE status = 'paga' AND data_pagamento >= ?`).get(inicioMesISO);
+  const emAprovacao = db.prepare(`SELECT COUNT(*) AS c FROM pedidos WHERE status = 'aprovacao_faturamento'`).get();
+
+  res.json({
+    data: {
+      em_aprovacao:    { count: emAprovacao.c,  valor: 0 },
+      nf_emitidas:     { count: nfEmitida.c,     valor: nfEmitida.v },
+      a_receber:       { count: abertas.c,       valor: abertas.v },
+      em_atraso:       { count: atrasadas.c,     valor: atrasadas.v },
+      recebidas_mes:   { count: recebidasMes.c,  valor: recebidasMes.v },
+    }
+  });
+});
+
 // LISTAR
 router.get('/', (req, res) => {
   const { search, status, cliente_id, data_inicio, data_fim } = req.query;
