@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Plus, Search, FileText, Lock, ChevronRight } from 'lucide-react';
+import { Plus, Search, FileText, Lock, ChevronRight, Edit2, Receipt } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -42,10 +41,31 @@ type Contrato = {
   cm_por_veiculo?: CmPorVeiculo;
 };
 
+type Movimentacao = {
+  data: string;
+  tipo: string;
+  veiculo_tipo: string;
+  veiculo_nome: string;
+  numero_nf: string;
+  nf_id: number;
+  pedido_id: number;
+  cm: number;
+  cm_abs: number;
+  saldo_apos: number;
+  usuario_nome: string;
+  observacoes?: string;
+};
+
 const VEICULO_DOT: Record<string, string> = {
   dou: 'bg-navy-600',
   doe: 'bg-emerald-600',
   jornal: 'bg-amber-600',
+};
+
+const VEICULO_STYLE: Record<string, { bg: string; text: string; label: string }> = {
+  dou:    { bg: 'bg-navy-50',     text: 'text-navy-700',     label: 'DOU' },
+  doe:    { bg: 'bg-emerald-50',  text: 'text-emerald-700',  label: 'DOE' },
+  jornal: { bg: 'bg-amber-50',    text: 'text-amber-700',    label: 'JORNAL' },
 };
 
 type Cliente = { id: number; nome: string; municipio?: string; estado?: string };
@@ -83,7 +103,6 @@ function statusContrato(c: Contrato): { label: string; cor: string } {
   return { label: 'Vigente', cor: 'bg-emerald-100 text-emerald-700' };
 }
 
-// Cor do valor "faturado" baseado no percentual de uso
 function corFaturado(pct: number): string {
   if (pct >= 90) return 'text-red-600';
   if (pct >= 70) return 'text-amber-600';
@@ -108,6 +127,9 @@ export default function ContratosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [veiculos, setVeiculos] = useState<Veiculo[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [movs, setMovs] = useState<Movimentacao[] | null>(null);
+  const [loadingMov, setLoadingMov] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -118,6 +140,33 @@ export default function ContratosPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (data.length > 0 && selectedId === null) {
+      selectContrato(data[0].id);
+    } else if (selectedId !== null && !data.find((c) => c.id === selectedId)) {
+      setSelectedId(data[0]?.id ?? null);
+      if (data[0]) loadMovs(data[0].id);
+    }
+  }, [data]);
+
+  const selectContrato = (id: number) => {
+    setSelectedId(id);
+    loadMovs(id);
+  };
+
+  const loadMovs = async (id: number) => {
+    setMovs(null);
+    setLoadingMov(true);
+    try {
+      const r = await api.get<{ data: Movimentacao[] }>(`/api/contratos/${id}/movimentacoes`);
+      setMovs(r.data);
+    } catch {
+      setMovs([]);
+    } finally {
+      setLoadingMov(false);
+    }
+  };
 
   const openNew = async () => {
     setForm({ ...emptyForm, data_inicio: new Date().toISOString().slice(0, 10) });
@@ -169,6 +218,8 @@ export default function ContratosPage() {
   };
 
   const totalContratado = form.itens.reduce((acc, i) => acc + (i.cm_contratado * i.valor_unitario_venda), 0);
+  const selected = data.find((c) => c.id === selectedId) || null;
+  const totalPct = selected && selected.cm_total_contratado > 0 ? (selected.cm_total_utilizado / selected.cm_total_contratado) * 100 : 0;
 
   return (
     <div>
@@ -220,18 +271,18 @@ export default function ContratosPage() {
           />
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden mb-5">
           <div className="overflow-x-auto">
             <Table>
               <THead>
                 <TR>
-                  <TH className="w-36">Município</TH>
-                  <TH className="w-24">Contrato</TH>
-                  <TH className="w-36">Vigência</TH>
+                  <TH className="w-32">Município</TH>
+                  <TH className="w-20">Contrato</TH>
+                  <TH className="w-32">Vigência</TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.doe)} />DOE</span></TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
-                  <TH className="w-24">Status</TH>
+                  <TH className="w-20">Status</TH>
                   <TH className="w-6" />
                 </TR>
                 <TR>
@@ -253,30 +304,24 @@ export default function ContratosPage() {
               <TBody>
                 {data.map((c) => {
                   const st = statusContrato(c);
+                  const isSelected = selectedId === c.id;
                   return (
-                    <TR key={c.id} className="hover:bg-ink-50/40 transition-colors group">
+                    <TR
+                      key={c.id}
+                      onClick={() => selectContrato(c.id)}
+                      className={cn('cursor-pointer hover:bg-ink-50/40 transition-colors', isSelected && 'bg-brand-50/40')}
+                    >
                       <TD>
-                        <Link href={`/app/contratos/${c.id}`} className="block">
-                          <div className="font-medium text-ink-900 text-sm whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
-                          <div className="text-[10px] text-ink-500 truncate max-w-[140px]">{c.cliente_nome}</div>
-                        </Link>
+                        <div className="font-medium text-ink-900 text-xs whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
                       </TD>
                       <TD>
-                        <Link href={`/app/contratos/${c.id}`} className="block">
-                          <div className="font-mono text-sm text-ink-800 whitespace-nowrap">{c.numero || `#${c.id}`}</div>
-                        </Link>
+                        <div className="font-mono text-xs text-ink-800 whitespace-nowrap">{c.numero || `#${c.id}`}</div>
                       </TD>
                       <TD>
-                        <Link href={`/app/contratos/${c.id}`} className="block">
-                          <div className="text-xs text-ink-600 whitespace-nowrap">
-                            {format.data(c.data_inicio)} a <strong>{format.data(c.data_fim)}</strong>
-                          </div>
-                          {c.dias_para_vencer !== null && (
-                            <div className={cn('text-[10px] mt-0.5', c.dias_para_vencer < 0 ? 'text-red-600' : c.dias_para_vencer <= 60 ? 'text-amber-600' : 'text-ink-400')}>
-                              {c.dias_para_vencer < 0 ? `Vencido há ${Math.abs(c.dias_para_vencer)}d` : c.dias_para_vencer <= 60 ? `Vence em ${c.dias_para_vencer}d` : `${c.dias_para_vencer}d restantes`}
-                            </div>
-                          )}
-                        </Link>
+                        <div className="text-[11px] text-ink-600 whitespace-nowrap leading-tight">
+                          {format.data(c.data_inicio)}<br />
+                          <span className="text-ink-400">a </span><strong className="text-ink-700">{format.data(c.data_fim)}</strong>
+                        </div>
                       </TD>
                       {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
                         const v = c.cm_por_veiculo?.[tipo];
@@ -287,32 +332,28 @@ export default function ContratosPage() {
                         }
                         const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
                         return (
-                          <TD key={tipo} colSpan={4} className="px-1.5">
-                            <div className="grid grid-cols-3 gap-1 text-[11px] font-mono">
+                          <TD key={tipo} colSpan={4} className="px-1">
+                            <div className="grid grid-cols-3 gap-0.5 text-[10px] font-mono">
                               <div className="text-center"><span className="font-semibold text-ink-900">{format.cm(v.cm_contratado)}</span></div>
                               <div className="text-center"><span className={cn('font-semibold', corFaturado(pct))}>{format.cm(v.cm_utilizado)}</span></div>
                               <div className="text-center"><span className={cn('font-semibold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>{format.cm(v.cm_disponivel)}</span></div>
                             </div>
-                            <div className="mt-1 flex items-center gap-1.5">
+                            <div className="mt-1 flex items-center gap-1">
                               <div className="flex-1 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
                                 <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
                               </div>
-                              <span className={cn('text-[10px] font-bold w-8 text-right tabular-nums', corFaturado(pct))}>{pct.toFixed(0)}%</span>
+                              <span className={cn('text-[9px] font-bold w-7 text-right tabular-nums', corFaturado(pct))}>{pct.toFixed(0)}%</span>
                             </div>
                           </TD>
                         );
                       })}
                       <TD>
-                        <Link href={`/app/contratos/${c.id}`} className="block">
-                          <span className={cn('inline-flex items-center px-2.5 py-1 rounded-pill text-[10px] font-bold uppercase tracking-wider whitespace-nowrap', st.cor)}>
-                            {st.label}
-                          </span>
-                        </Link>
+                        <span className={cn('inline-flex items-center px-2 py-0.5 rounded-pill text-[9px] font-bold uppercase tracking-wider whitespace-nowrap', st.cor)}>
+                          {st.label}
+                        </span>
                       </TD>
                       <TD>
-                        <Link href={`/app/contratos/${c.id}`} className="block text-right">
-                          <ChevronRight className="w-4 h-4 text-ink-400 group-hover:text-brand-600 inline" />
-                        </Link>
+                        <ChevronRight className={cn('w-4 h-4', isSelected ? 'text-brand-600' : 'text-ink-400')} />
                       </TD>
                     </TR>
                   );
@@ -321,6 +362,194 @@ export default function ContratosPage() {
             </Table>
           </div>
         </Card>
+      )}
+
+      {/* Painel de detalhes + Movimentações (tudo na mesma página, estilo Publica Mais) */}
+      {selected && (
+        <>
+          <div className="grid lg:grid-cols-3 gap-4 mb-5">
+            {/* Detalhes do contrato */}
+            <Card>
+              <div className="p-5">
+                <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Detalhes do contrato</p>
+                <h3 className="text-base font-bold text-ink-900">{selected.cliente_municipio}{selected.cliente_estado ? ` - ${selected.cliente_estado}` : ''}</h3>
+                <p className="text-xs text-ink-500 mt-0.5">{selected.cliente_nome}</p>
+                <span className={cn('inline-block mt-2 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider', statusContrato(selected).cor)}>
+                  {statusContrato(selected).label}
+                </span>
+                <dl className="mt-4 space-y-2 text-xs">
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Contrato</dt><dd className="font-mono text-ink-800">{selected.numero || `#${selected.id}`}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Vigência</dt><dd className="text-ink-800 text-right">{format.data(selected.data_inicio)} → {format.data(selected.data_fim)}</dd></div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-ink-500 whitespace-nowrap">Dias restantes</dt>
+                    <dd className={cn('font-semibold', (selected.dias_para_vencer ?? 0) < 0 ? 'text-red-600' : (selected.dias_para_vencer ?? 0) <= 60 ? 'text-amber-600' : 'text-ink-800')}>
+                      {selected.dias_para_vencer !== null
+                        ? (selected.dias_para_vencer < 0 ? `${Math.abs(selected.dias_para_vencer)}d vencido` : `${selected.dias_para_vencer}d`)
+                        : '—'}
+                    </dd>
+                  </div>
+                  {selected.objeto && (
+                    <div className="pt-2 border-t border-ink-100">
+                      <dt className="text-ink-500 mb-1">Objeto</dt>
+                      <dd className="text-ink-700 leading-relaxed">{selected.objeto}</dd>
+                    </div>
+                  )}
+                </dl>
+                {isAdmin && (
+                  <Button variant="outline" size="sm" className="mt-4 w-full">
+                    <Edit2 className="w-3.5 h-3.5" />Editar contrato
+                  </Button>
+                )}
+              </div>
+            </Card>
+
+            {/* Saldos por veículo */}
+            <Card>
+              <div className="p-5">
+                <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Saldos por veículo</p>
+                <div className="space-y-3">
+                  {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
+                    const v = selected.cm_por_veiculo?.[tipo];
+                    const meta = VEICULO_STYLE[tipo];
+                    if (!v) {
+                      return (
+                        <div key={tipo} className={cn('rounded-lg border border-ink-200 p-3 opacity-50', meta.bg)}>
+                          <div className="flex items-center gap-2">
+                            <span className={cn('w-7 h-7 rounded-md bg-white border border-ink-200 flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
+                            <span className="text-xs text-ink-400">não contratado</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
+                    return (
+                      <div key={tipo} className={cn('rounded-lg border border-ink-200 p-3', meta.bg)}>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className={cn('w-7 h-7 rounded-md bg-white flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
+                            <span className="text-xs font-semibold text-ink-700">{pct.toFixed(0)}% utilizado</span>
+                          </div>
+                          <span className={cn('text-sm font-bold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>
+                            {format.cm(v.cm_disponivel)} <span className="text-[10px] font-normal text-ink-500">disp</span>
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 text-[11px]">
+                          <div>
+                            <div className="text-ink-500">Contratado</div>
+                            <div className="font-mono font-semibold text-ink-900">{format.cm(v.cm_contratado)}</div>
+                          </div>
+                          <div>
+                            <div className="text-ink-500">Faturado</div>
+                            <div className={cn('font-mono font-semibold', corFaturado(pct))}>{format.cm(v.cm_utilizado)}</div>
+                          </div>
+                          <div>
+                            <div className="text-ink-500">Disponível</div>
+                            <div className={cn('font-mono font-semibold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>{format.cm(v.cm_disponivel)}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 h-1.5 bg-white rounded-pill overflow-hidden">
+                          <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+
+            {/* Informações do contrato */}
+            <Card>
+              <div className="p-5">
+                <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Informações do contrato</p>
+                <dl className="space-y-2 text-xs">
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500">Status</dt><dd className="font-semibold text-ink-800 capitalize">{selected.status}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500">Modalidade</dt><dd className="text-ink-800 capitalize">{selected.modalidade || '—'}</dd></div>
+                  {selected.processo && <div className="flex justify-between gap-3"><dt className="text-ink-500">Processo</dt><dd className="font-mono text-ink-800">{selected.processo}</dd></div>}
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor contratado</dt><dd className="font-semibold text-ink-900">{format.brl(selected.valor_total_venda)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor utilizado</dt><dd className="font-semibold text-ink-900">{format.brl(selected.valor_utilizado)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-500">Total cm</dt><dd className="font-mono text-ink-800">{format.cm(selected.cm_total_contratado)}</dd></div>
+                  <div className="pt-3 border-t border-ink-100">
+                    <dt className="text-ink-500 mb-1">Uso total do contrato</dt>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-ink-100 rounded-pill overflow-hidden">
+                        <div className={cn('h-full', corBarra(totalPct))} style={{ width: `${Math.min(100, totalPct)}%` }} />
+                      </div>
+                      <span className={cn('text-xs font-bold', corFaturado(totalPct))}>{totalPct.toFixed(0)}%</span>
+                    </div>
+                  </div>
+                </dl>
+              </div>
+            </Card>
+          </div>
+
+          {/* Movimentações do contrato (sempre abaixo) */}
+          <Card>
+            <div className="p-5 border-b border-ink-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-ink-900 flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-brand-700" />
+                  Movimentações do contrato
+                </h3>
+                <p className="text-xs text-ink-500 mt-0.5">
+                  Baixas e estornos de centímetros por NF emitida
+                  {movs && movs.length > 0 ? ` · ${movs.length} registro(s)` : ''}
+                </p>
+              </div>
+            </div>
+            {loadingMov ? (
+              <div className="p-8 text-center text-sm text-ink-500">Carregando movimentações...</div>
+            ) : !movs || movs.length === 0 ? (
+              <div className="p-8 text-center text-sm text-ink-500">Nenhuma movimentação registrada neste contrato ainda.</div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-ink-50/70 border-b border-ink-100">
+                      <tr>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Data</th>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Tipo</th>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Veículo</th>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Número/NF</th>
+                        <th className="text-right font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Centímetros</th>
+                        <th className="text-right font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Saldo após operação</th>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Usuário</th>
+                        <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Observações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-ink-100">
+                      {movs.map((m, i) => {
+                        const isEstorno = m.cm > 0; // NF cancelada devolve cm (positivo)
+                        return (
+                          <tr key={i} className="hover:bg-ink-50/40">
+                            <td className="px-4 py-2.5 text-ink-700 whitespace-nowrap text-xs">{format.data(m.data)}</td>
+                            <td className="px-4 py-2.5">
+                              <span className={cn('inline-flex items-center px-2 py-0.5 rounded-pill text-[10px] font-semibold uppercase tracking-wider', isEstorno ? 'bg-red-100 text-red-700' : 'bg-brand-100 text-brand-700')}>
+                                {m.tipo}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2.5 text-ink-700 text-xs uppercase">{m.veiculo_tipo}</td>
+                            <td className="px-4 py-2.5 font-mono text-ink-800 text-xs">NF {m.numero_nf}{isEstorno ? ' (Cancelada)' : ''}</td>
+                            <td className={cn('px-4 py-2.5 text-right font-mono font-semibold text-xs', isEstorno ? 'text-emerald-600' : 'text-red-600')}>
+                              {m.cm > 0 ? '+' : ''}{m.cm} cm
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-mono text-ink-700 text-xs">{format.cm(m.saldo_apos)}</td>
+                            <td className="px-4 py-2.5 text-ink-600 text-xs">{m.usuario_nome}</td>
+                            <td className="px-4 py-2.5 text-ink-500 italic text-xs">{m.observacoes || '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-4 border-t border-ink-100 text-center">
+                  <Button variant="ghost" size="sm">
+                    Ver todas as movimentações
+                  </Button>
+                </div>
+              </>
+            )}
+          </Card>
+        </>
       )}
 
       <Modal
