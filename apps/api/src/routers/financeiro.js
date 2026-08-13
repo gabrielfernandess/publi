@@ -79,6 +79,40 @@ router.get('/dashboard', (_req, res) => {
     LIMIT 5
   `).all();
 
+  // Aging de NFs a receber (0-30, 31-60, 61-90, 90+ dias)
+  const aging = db.prepare(`
+    SELECT
+      SUM(CASE WHEN dias >= 0  AND dias <= 30 THEN 1 ELSE 0 END) AS ate_30_qtd,
+      SUM(CASE WHEN dias >= 0  AND dias <= 30 THEN valor ELSE 0 END) AS ate_30_valor,
+      SUM(CASE WHEN dias > 30 AND dias <= 60 THEN 1 ELSE 0 END) AS de_31_60_qtd,
+      SUM(CASE WHEN dias > 30 AND dias <= 60 THEN valor ELSE 0 END) AS de_31_60_valor,
+      SUM(CASE WHEN dias > 60 AND dias <= 90 THEN 1 ELSE 0 END) AS de_61_90_qtd,
+      SUM(CASE WHEN dias > 60 AND dias <= 90 THEN valor ELSE 0 END) AS de_61_90_valor,
+      SUM(CASE WHEN dias > 90 THEN 1 ELSE 0 END) AS mais_90_qtd,
+      SUM(CASE WHEN dias > 90 THEN valor ELSE 0 END) AS mais_90_valor
+    FROM (
+      SELECT
+        CAST(julianday('now') - julianday(data_emissao) AS INTEGER) AS dias,
+        valor
+      FROM notas_fiscais
+      WHERE status IN ('emitida', 'enviada')
+    )
+  `).get();
+
+  // Distribuicao por veiculo: soma cm_publicado e valor por veiculo_tipo dos pedidos
+  const distVeiculo = db.prepare(`
+    SELECT
+      v.tipo AS veiculo_tipo,
+      COUNT(DISTINCT pi.pedido_id) AS qtd_pedidos,
+      COALESCE(SUM(pi.cm_publicado), 0) AS total_cm,
+      COALESCE(SUM(pi.cm_publicado * ci.valor_unitario_venda), 0) AS total_valor
+    FROM pedido_itens pi
+    INNER JOIN contrato_itens ci ON ci.id = pi.contrato_item_id
+    INNER JOIN veiculos v ON v.id = ci.veiculo_id
+    GROUP BY v.tipo
+    ORDER BY total_valor DESC
+  `).all();
+
   res.json({
     data: {
       caixa_por_mes: caixaPorMes,
@@ -91,6 +125,8 @@ router.get('/dashboard', (_req, res) => {
       nfs_pendentes: pendentes,
       nfs_atrasadas: atrasadas,
       top_clientes: topClientes,
+      aging,
+      dist_veiculo: distVeiculo,
       gerado_em: new Date().toISOString(),
     },
   });

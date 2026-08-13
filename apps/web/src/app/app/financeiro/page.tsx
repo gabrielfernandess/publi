@@ -16,12 +16,15 @@ import { format, diasAte } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  PieChart, Pie, Cell,
 } from 'recharts';
 
 type Mes = { mes: string; faturado: number; recebido: number; a_receber: number };
 type NFResumo = { id: number; numero: string; data_emissao: string; valor: number; status: string; cliente_nome: string; municipio?: string };
 type ClienteResumo = { cliente_nome: string; municipio?: string; total_faturado: number; total_nfs: number };
 type ContratoResumo = { id: number; numero?: string; cliente_nome: string; municipio?: string; data_fim: string; valor_total_venda: number; valor_utilizado: number; cm_total_contratado: number; cm_total_utilizado: number; dias_para_vencer: number | null };
+type AgingFaixa = { ate_30_qtd: number; ate_30_valor: number; de_31_60_qtd: number; de_31_60_valor: number; de_61_90_qtd: number; de_61_90_valor: number; mais_90_qtd: number; mais_90_valor: number };
+type VeiculoResumo = { veiculo_tipo: 'dou' | 'doe' | 'jornal'; qtd_pedidos: number; total_cm: number; total_valor: number };
 
 type Fin = {
   caixa_por_mes: Mes[];
@@ -29,6 +32,8 @@ type Fin = {
   nfs_pendentes: NFResumo[];
   nfs_atrasadas: { qtd: number; valor_total: number };
   top_clientes: ClienteResumo[];
+  aging: AgingFaixa;
+  dist_veiculo: VeiculoResumo[];
 };
 
 const STATUS_NF: Record<string, { label: string; corBg: string; corText: string }> = {
@@ -400,6 +405,111 @@ export default function FinanceiroPage() {
                 </div>
               </div>
             </div>
+          </CardBody>
+        </Card>
+      </div>
+
+      {/* Seção 2.5: Aging de NFs + Distribuição por veículo */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600" />
+              Aging de NFs a receber
+            </CardTitle>
+            <CardDescription>Quanto tempo cada NF tá em aberto — pra priorizar cobrança</CardDescription>
+          </CardHeader>
+          <CardBody>
+            {(() => {
+              const a = data.aging;
+              const totalValor = a.ate_30_valor + a.de_31_60_valor + a.de_61_90_valor + a.mais_90_valor;
+              if (totalValor === 0) {
+                return <div className="py-10 text-center text-sm text-ink-500">Nenhuma NF em aberto. 🎉</div>;
+              }
+              const agingData = [
+                { faixa: '0-30d',  qtd: a.ate_30_qtd,  valor: a.ate_30_valor,  cor: '#10B981' },
+                { faixa: '31-60d', qtd: a.de_31_60_qtd, valor: a.de_31_60_valor, cor: '#F59E0B' },
+                { faixa: '61-90d', qtd: a.de_61_90_qtd, valor: a.de_61_90_valor, cor: '#F97316' },
+                { faixa: '90+d',   qtd: a.mais_90_qtd,  valor: a.mais_90_valor,  cor: '#EF4444' },
+              ];
+              return (
+                <div className="space-y-3">
+                  {agingData.map((f) => {
+                    const pct = (f.valor / totalValor) * 100;
+                    return (
+                      <div key={f.faixa}>
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <span className="font-semibold text-ink-700">{f.faixa}</span>
+                          <span className="text-ink-500">
+                            <strong className="text-ink-800">{f.qtd}</strong> NF(s) · <strong className="text-ink-800">{format.brl(f.valor)}</strong> · {pct.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="h-3 bg-ink-100 rounded-pill overflow-hidden">
+                          <div className="h-full rounded-pill transition-all" style={{ width: `${pct}%`, backgroundColor: f.cor }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-3 mt-3 border-t border-ink-100 flex items-center justify-between text-xs">
+                    <span className="text-ink-500">Total em aberto</span>
+                    <span className="font-bold text-ink-900">{format.brl(totalValor)}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-brand-700" />
+              Mix por veículo
+            </CardTitle>
+            <CardDescription>Onde está concentrado o faturamento (DOU, DOE, Jornal)</CardDescription>
+          </CardHeader>
+          <CardBody>
+            {data.dist_veiculo.length === 0 ? (
+              <div className="py-10 text-center text-sm text-ink-500">Sem pedidos faturados ainda.</div>
+            ) : (() => {
+              const cores: Record<string, string> = { dou: '#1E3A8A', doe: '#009B81', jornal: '#F59E0B' };
+              const labels: Record<string, string> = { dou: 'DOU', doe: 'DOE', jornal: 'Jornal' };
+              const total = data.dist_veiculo.reduce((acc, v) => acc + v.total_valor, 0);
+              const dataChart = data.dist_veiculo.map((v) => ({
+                name: labels[v.veiculo_tipo] || v.veiculo_tipo,
+                value: v.total_valor,
+                cor: cores[v.veiculo_tipo] || '#94A3B8',
+              }));
+              return (
+                <div className="flex items-center gap-4">
+                  <div className="w-32 h-32 flex-shrink-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={dataChart} dataKey="value" innerRadius={36} outerRadius={56} paddingAngle={2}>
+                          {dataChart.map((entry, i) => <Cell key={i} fill={entry.cor} stroke="none" />)}
+                        </Pie>
+                        <Tooltip formatter={(v: number) => format.brl(v)} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2">
+                    {data.dist_veiculo.map((v) => {
+                      const pct = total > 0 ? (v.total_valor / total) * 100 : 0;
+                      return (
+                        <div key={v.veiculo_tipo} className="flex items-center gap-2 text-xs">
+                          <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: cores[v.veiculo_tipo] || '#94A3B8' }} />
+                          <span className="font-semibold text-ink-800 flex-1">{labels[v.veiculo_tipo] || v.veiculo_tipo}</span>
+                          <span className="text-ink-500 whitespace-nowrap">
+                            {v.qtd_pedidos} pedidos · <strong className="text-ink-800">{format.brl(v.total_valor)}</strong>
+                          </span>
+                          <span className="font-semibold text-ink-700 w-10 text-right">{pct.toFixed(0)}%</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </CardBody>
         </Card>
       </div>
