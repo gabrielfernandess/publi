@@ -42,6 +42,35 @@ router.get('/', (req, res) => {
   if (cliente_id) { sql += ' AND c.cliente_id = ?'; params.push(cliente_id); }
   sql += ' GROUP BY c.id ORDER BY c.data_fim ASC, c.id DESC';
   const rows = db.prepare(sql).all(...params).map((r) => ({ ...r, dias_para_vencer: diffDias(r.data_fim) }));
+
+  // complementa com cm por veiculo (DOU/DOE/JORNAL)
+  const ids = rows.map((r) => r.id);
+  if (ids.length > 0) {
+    const porVeiculo = db.prepare(`
+      SELECT
+        ci.contrato_id,
+        v.tipo AS veiculo_tipo,
+        COALESCE(SUM(ci.cm_contratado), 0) AS cm_contratado,
+        COALESCE(SUM(ci.cm_utilizado), 0) AS cm_utilizado
+      FROM contrato_itens ci
+      INNER JOIN veiculos v ON v.id = ci.veiculo_id
+      WHERE ci.contrato_id IN (${ids.map(() => '?').join(',')})
+      GROUP BY ci.contrato_id, v.tipo
+    `).all(...ids);
+    const map = new Map();
+    for (const p of porVeiculo) {
+      if (!map.has(p.contrato_id)) map.set(p.contrato_id, {});
+      map.get(p.contrato_id)[p.veiculo_tipo] = {
+        cm_contratado: p.cm_contratado,
+        cm_utilizado: p.cm_utilizado,
+        cm_disponivel: p.cm_contratado - p.cm_utilizado,
+      };
+    }
+    for (const r of rows) {
+      r.cm_por_veiculo = map.get(r.id) || {};
+    }
+  }
+
   res.json({ data: rows });
 });
 
@@ -186,6 +215,65 @@ router.delete('/:id', requirePapel('admin'), (req, res) => {
   if (!exists) return res.status(404).json({ error: 'Contrato nao encontrado' });
   db.prepare('UPDATE contratos SET status = ? WHERE id = ?').run('encerrado', req.params.id);
   res.json({ ok: true });
+});
+
+// ============== Sprint 12: Movimentacoes do contrato (ledger) ==============
+
+// GET /api/contratos/:id/movimentacoes - ledger de NFs emitidas/canceladas
+router.get('/:id/movimentacoes', (req, res) => {
+  const exists = db.prepare('SELECT id FROM contratos WHERE id = ?').get(req.params.id);
+  if (!exists) return res.status(404).json({ error: 'Contrato nao encontrado' });
+
+  // cada NF gera entradas (uma por pedido_item afetado)
+  // emitida: baixa cm_publicado (negativo no saldo)
+  // cancelada: estorna cm_publicado (positivo)
+  const rows = db.prepare(`
+    SELECT
+      nf.id AS nf_id,
+      nf.numero,
+      nf.data_emissao,
+      nf.status,
+      nf.observacoes,
+      pi.cm_publicado,
+      v.tipo AS veiculo_tipo,
+      v.nome AS veiculo_nome,
+      p.id AS pedido_id,
+      u.nome AS usuario_nome
+    FROM notas_fiscais nf
+    INNER JOIN pedido_itens pi ON pi.pedido_id = nf.pedido_id
+    INNER JOIN contrato_itens ci ON ci.id = pi.contrato_item_id
+    INNER JOIN veiculos v ON v.id = ci.veiculo_id
+    INNER JOIN pedidos p ON p.id = nf.pedido_id
+    LEFT JOIN users u ON u.id = p.responsavel_id
+    WHERE p.contrato_id = ?
+    ORDER BY nf.data_emissao DESC, nf.id DESC
+  `).all(req.params.id);
+
+  // transforma em ledger com tipo + delta
+  let saldoAcumulado = 0; // ainda nao implementa running, mas mantem hook
+  const ledger = rows.map((r) => {
+    const emitida = r.status === 'emitida' || r.status === 'enviada' || r.status === 'paga';
+    const cancelada = r.status === 'cancelada';
+    const tipo = cancelada ? 'Nota Fiscal Cancelada' : 'Faturamento (NF Emitida)';
+    const delta = cancelada ? Number(r.cm_publicado) : -Number(r.cm_publicado);
+    saldoAcumulado += delta;
+    return {
+      data: r.data_emissao,
+      tipo,
+      veiculo_tipo: r.veiculo_tipo,
+      veiculo_nome: r.veiculo_nome,
+      numero_nf: r.numero,
+      nf_id: r.nf_id,
+      pedido_id: r.pedido_id,
+      cm: delta, // negativo = baixa, positivo = estorno
+      cm_abs: Number(r.cm_publicado),
+      saldo_apos: saldoAcumulado, // running total (negativo)
+      usuario_nome: r.usuario_nome || '—',
+      observacoes: r.observacoes,
+    };
+  });
+
+  res.json({ data: ledger });
 });
 
 // ============== Sprint 4: Saldo contratual ==============
