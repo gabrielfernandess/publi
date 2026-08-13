@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use as usePromise } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Calendar, FileText, AlertTriangle, Package2, MapPin } from 'lucide-react';
+import { ArrowLeft, FileText, AlertTriangle, Package2, MapPin, Receipt } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -37,6 +37,21 @@ type ContratoDetalhe = {
   pedidos: Array<{ id: number; data_solicitacao: string; categoria: string; status: string; descricao: string }>;
 };
 
+type Movimentacao = {
+  data: string;
+  tipo: string;
+  veiculo_tipo: string;
+  veiculo_nome: string;
+  numero_nf: string;
+  nf_id: number;
+  pedido_id: number;
+  cm: number;
+  cm_abs: number;
+  saldo_apos: number;
+  usuario_nome: string;
+  observacoes?: string;
+};
+
 const STATUS_LABEL: Record<string, { label: string; emoji: string }> = {
   solicitada: { label: 'Solicitada', emoji: '📥' },
   em_preparacao: { label: 'Em preparação', emoji: '📋' },
@@ -57,11 +72,15 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
   const { id } = usePromise(params);
   const [data, setData] = useState<ContratoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [movs, setMovs] = useState<Movimentacao[] | null>(null);
 
   useEffect(() => {
     api.get<{ data: ContratoDetalhe }>(`/api/contratos/${id}`)
       .then((r) => setData(r.data))
       .finally(() => setLoading(false));
+    api.get<{ data: Movimentacao[] }>(`/api/contratos/${id}/movimentacoes`)
+      .then((r) => setMovs(r.data))
+      .catch(() => setMovs([]));
   }, [id]);
 
   if (loading) return <div className="text-sm text-ink-500">Carregando...</div>;
@@ -213,6 +232,65 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                 );
               })}
             </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* Movimentações do contrato (ledger) */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-brand-700" />
+            Movimentações do contrato
+          </CardTitle>
+          <CardDescription>
+            Baixas e estornos de centímetros por NF emitida
+            {movs && movs.length > 0 ? ` · ${movs.length} registro(s)` : ''}
+          </CardDescription>
+        </CardHeader>
+        <CardBody className="p-0">
+          {movs === null ? (
+            <div className="p-8 text-center text-sm text-ink-500">Carregando movimentações...</div>
+          ) : movs.length === 0 ? (
+            <div className="p-8 text-center text-sm text-ink-500">Nenhuma movimentação registrada neste contrato ainda.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-ink-50/70 border-b border-ink-100">
+                  <tr>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Data</th>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Tipo</th>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Veículo</th>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">NF</th>
+                    <th className="text-right font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Centímetros</th>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Usuário</th>
+                    <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Observações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-ink-100">
+                  {movs.map((m, i) => {
+                    const isEstorno = m.cm > 0;
+                    return (
+                      <tr key={i} className="hover:bg-ink-50/40">
+                        <td className="px-4 py-2.5 text-ink-700 whitespace-nowrap text-xs">{format.data(m.data)}</td>
+                        <td className="px-4 py-2.5">
+                          <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-pill text-[10px] font-semibold', isEstorno ? 'bg-amber-100 text-amber-700' : 'bg-brand-100 text-brand-700')}>
+                            {m.tipo}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5 text-ink-700 text-xs capitalize">{m.veiculo_tipo}</td>
+                        <td className="px-4 py-2.5 font-mono text-ink-800 text-xs">NF {m.numero_nf}</td>
+                        <td className={cn('px-4 py-2.5 text-right font-mono font-semibold text-xs', isEstorno ? 'text-amber-600' : 'text-brand-600')}>
+                          {m.cm > 0 ? '+' : ''}{m.cm} cm
+                        </td>
+                        <td className="px-4 py-2.5 text-ink-600 text-xs">{m.usuario_nome}</td>
+                        <td className="px-4 py-2.5 text-ink-500 italic text-xs">{m.observacoes || '—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardBody>
       </Card>
