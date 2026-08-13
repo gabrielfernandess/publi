@@ -151,6 +151,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.a_faturar.valor) : '—'}
           hint={kpis ? `${kpis.a_faturar.count} lotes` : ''}
           accent="brand"
+          size="sm"
         />
         <StatCard
           icon={<AlertTriangle className="w-5 h-5" />}
@@ -158,6 +159,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.em_aprovacao.valor) : '—'}
           hint={kpis ? `${kpis.em_aprovacao.count} lotes` : ''}
           accent="amber"
+          size="sm"
         />
         <StatCard
           icon={<FileCheck2 className="w-5 h-5" />}
@@ -165,6 +167,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.nf_emitidas.valor) : '—'}
           hint={kpis ? `${kpis.nf_emitidas.count} lotes` : ''}
           accent="green"
+          size="sm"
         />
         <StatCard
           icon={<Banknote className="w-5 h-5" />}
@@ -172,6 +175,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.a_receber.valor) : '—'}
           hint={kpis ? `${kpis.a_receber.count} lotes` : ''}
           accent="amber"
+          size="sm"
         />
         <StatCard
           icon={<AlertTriangle className="w-5 h-5" />}
@@ -179,6 +183,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.em_atraso.valor) : '—'}
           hint={kpis ? `${kpis.em_atraso.count} lotes` : ''}
           accent="red"
+          size="sm"
         />
         <StatCard
           icon={<Banknote className="w-5 h-5" />}
@@ -186,6 +191,7 @@ export default function FaturamentoPage() {
           value={kpis ? format.brl(kpis.recebidas_mes.valor) : '—'}
           hint={kpis ? `${kpis.recebidas_mes.count} lotes` : ''}
           accent="green"
+          size="sm"
         />
       </div>
 
