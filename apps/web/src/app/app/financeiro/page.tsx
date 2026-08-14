@@ -40,7 +40,7 @@ type Fin = {
 
 const STATUS_NF: Record<string, { label: string; corBg: string; corText: string }> = {
   emitida:   { label: 'A receber', corBg: 'bg-amber-100', corText: 'text-amber-800' },
-  enviada:   { label: 'Em cobrança', corBg: 'bg-sky-100', corText: 'text-sky-800' },
+  enviada:   { label: 'Em cobran�a', corBg: 'bg-sky-100', corText: 'text-sky-800' },
   paga:      { label: 'Paga', corBg: 'bg-emerald-100', corText: 'text-emerald-800' },
   cancelada: { label: 'Cancelada', corBg: 'bg-red-100', corText: 'text-red-800' },
 };
@@ -62,8 +62,10 @@ export default function FinanceiroPage() {
   // ====== Filtros ======
   type PeriodoTipo = 'mes_atual' | 'mes_anterior' | 'semana_atual' | 'este_ano' | 'ano_passado' | 'personalizado';
   const [filtroPeriodo, setFiltroPeriodo] = useState<PeriodoTipo>('mes_atual');
-  const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
-  const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
+  // hoje fica null no SSR; � setado no client via useEffect pra evitar hydration mismatch
+  const [hoje, setHoje] = useState<Date | null>(null);
+  const [filtroMes, setFiltroMes] = useState<number>(1);
+  const [filtroAno, setFiltroAno] = useState<number>(2025);
   const [filtroDataIni, setFiltroDataIni] = useState<string>('');
   const [filtroDataFim, setFiltroDataFim] = useState<string>('');
   const [filtroVeiculo, setFiltroVeiculo] = useState<string>('');
@@ -81,11 +83,19 @@ export default function FinanceiroPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  // ====== Período resolvido (data_inicio, data_fim, label) ======
+  // seta "hoje" s� no client pra evitar hydration mismatch
+  useEffect(() => {
+    const agora = new Date();
+    setHoje(agora);
+    setFiltroMes(agora.getMonth() + 1);
+    setFiltroAno(agora.getFullYear());
+  }, []);
+
+  // ====== Per�odo resolvido (data_inicio, data_fim, label) ======
+  // usa "hoje" que � null no SSR e setado no client; quando null, usa 1� dia do ano corrente como placeholder
   const periodoResolvido = useMemo(() => {
-    const hoje = new Date();
-    const y = hoje.getFullYear();
-    const m = hoje.getMonth(); // 0-11
+    const y = hoje ? hoje.getFullYear() : 2025;
+    const m = hoje ? hoje.getMonth() : 0;
 
     if (filtroPeriodo === 'mes_atual') {
       const ini = new Date(y, m, 1);
@@ -100,6 +110,7 @@ export default function FinanceiroPage() {
       return { ini, fim, label: `${mesCurto(`${yy}-${String(ref + 1).padStart(2, '0')}`)}` };
     }
     if (filtroPeriodo === 'semana_atual') {
+      if (!hoje) return { ini: new Date(2025, 0, 1), fim: new Date(2025, 0, 7), label: '...' };
       const d = new Date(hoje);
       const dow = d.getDay() || 7; // dom=0 => 7
       d.setDate(d.getDate() - (dow - 1));
@@ -114,15 +125,15 @@ export default function FinanceiroPage() {
     if (filtroPeriodo === 'ano_passado') {
       return { ini: new Date(y - 1, 0, 1), fim: new Date(y - 1, 11, 31), label: `${y - 1}` };
     }
-    // personalizado — usa mes/ano OU datas manuais
+    // personalizado � usa mes/ano OU datas manuais
     if (filtroDataIni && filtroDataFim) {
-      return { ini: new Date(filtroDataIni), fim: new Date(filtroDataFim), label: `${format.data(filtroDataIni)} → ${format.data(filtroDataFim)}` };
+      return { ini: new Date(filtroDataIni), fim: new Date(filtroDataFim), label: `${format.data(filtroDataIni)} ? ${format.data(filtroDataFim)}` };
     }
     // fallback: usa filtroMes/filtroAno
     const ini = new Date(filtroAno, filtroMes - 1, 1);
     const fim = new Date(filtroAno, filtroMes, 0);
     return { ini, fim, label: `${mesCurto(`${filtroAno}-${String(filtroMes).padStart(2, '0')}`)}` };
-  }, [filtroPeriodo, filtroMes, filtroAno, filtroDataIni, filtroDataFim]);
+  }, [hoje, filtroPeriodo, filtroMes, filtroAno, filtroDataIni, filtroDataFim]);
 
   const emPeriodo = (iso: string) => {
     if (!iso) return true;
@@ -130,7 +141,7 @@ export default function FinanceiroPage() {
     return d >= periodoResolvido.ini && d <= periodoResolvido.fim;
   };
 
-  // ====== Clientes únicos (do top_clientes + nfs_pendentes) ======
+  // ====== Clientes �nicos (do top_clientes + nfs_pendentes) ======
   const clientesUnicos = useMemo(() => {
     const set = new Set<string>();
     if (data) {
@@ -140,10 +151,10 @@ export default function FinanceiroPage() {
     return Array.from(set).sort();
   }, [data]);
 
-  // ====== KPIs filtrados (mês atual sempre do backend, mas filtra por veículo) ======
+  // ====== KPIs filtrados (m�s atual sempre do backend, mas filtra por ve�culo) ======
   const kpisFiltrados = useMemo(() => {
     if (!data) return null;
-    // nfs do período pra recalcular KPIs por veículo/status
+    // nfs do per�odo pra recalcular KPIs por ve�culo/status
     const nfsPeriodo = data.nfs_pendentes.filter((n) => {
       if (!emPeriodo(n.data_emissao)) return false;
       if (filtroVeiculo && (n as any).veiculo_tipo && (n as any).veiculo_tipo !== filtroVeiculo) return false;
@@ -158,7 +169,7 @@ export default function FinanceiroPage() {
       const dias = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
       return dias > 60;
     });
-    // considera "atrasada" como emitida/enviada há mais de 60d
+    // considera "atrasada" como emitida/enviada h� mais de 60d
     return {
       faturado: nfsPeriodo.filter((n) => n.status !== 'cancelada').reduce((a, n) => a + n.valor, 0),
       recebido: nfsPagas,
@@ -182,10 +193,10 @@ export default function FinanceiroPage() {
 
   if (!data) return <div className="text-sm text-ink-500">Falha ao carregar.</div>;
 
-  // ====== Caixa filtrado por veículo + período ======
+  // ====== Caixa filtrado por ve�culo + per�odo ======
   const caixaFiltrado = useMemo(() => {
     if (!data) return [];
-    // caixa_por_mes vem do backend; se filtroPeriodo é específico, filtra pelos meses dentro do período
+    // caixa_por_mes vem do backend; se filtroPeriodo � espec�fico, filtra pelos meses dentro do per�odo
     return data.caixa_por_mes.filter((m) => {
       const [ano, mm] = m.mes.split('-').map(Number);
       const dIni = new Date(ano, mm - 1, 1);
@@ -194,7 +205,7 @@ export default function FinanceiroPage() {
     });
   }, [data, periodoResolvido]);
 
-  // limite de meses visíveis (se for anual e filtrou pra mais de 6, mostra todos)
+  // limite de meses vis�veis (se for anual e filtrou pra mais de 6, mostra todos)
   const caixaMostrar = periodo === '6m' ? caixaFiltrado.slice(-6) : caixaFiltrado;
   const caixaFormatado = caixaMostrar.map((m) => ({ ...m, mesLabel: mesCurto(m.mes) }));
 
@@ -210,16 +221,16 @@ export default function FinanceiroPage() {
 
   // ====== Top clientes filtrados ======
   const topClientesFiltrados = useMemo(() => {
-    // não temos data por cliente; mantemos todos os top_clientes e filtramos pelo nome
+    // n�o temos data por cliente; mantemos todos os top_clientes e filtramos pelo nome
     return data.top_clientes.filter((c) => !filtroCliente || c.cliente_nome === filtroCliente).slice(0, 6);
   }, [data, filtroCliente]);
 
-  // cálculos
+  // c�lculos
   const totalFaturadoPeriodo = caixaMostrar.reduce((acc, m) => acc + (m.faturado || 0), 0);
   const totalRecebidoPeriodo = caixaMostrar.reduce((acc, m) => acc + (m.recebido || 0), 0);
   const taxaRecebimento = totalFaturadoPeriodo > 0 ? Math.round((totalRecebidoPeriodo / totalFaturadoPeriodo) * 100) : 0;
 
-  // top 5 contratos por saldo a faturar (filtra por veículo se cliente tem contrato com aquele veículo)
+  // top 5 contratos por saldo a faturar (filtra por ve�culo se cliente tem contrato com aquele ve�culo)
   const topContratos = useMemo(() => {
     return contratos
       .map((c) => ({ ...c, saldo: c.valor_total_venda - c.valor_utilizado }))
@@ -228,6 +239,9 @@ export default function FinanceiroPage() {
       .sort((a, b) => b.saldo - a.saldo)
       .slice(0, 5);
   }, [contratos, filtroCliente]);
+
+  // ano de refer�ncia pros dropdowns (usa hoje se j� foi setado no client, sen�o fallback)
+  const anoReferencia = hoje ? hoje.getFullYear() : filtroAno;
 
   const clearFiltros = () => {
     setFiltroPeriodo('mes_atual');
@@ -257,8 +271,8 @@ export default function FinanceiroPage() {
               <div className="flex items-center gap-2 flex-1">
                 <Calendar className="w-4 h-4 text-ink-500" />
                 <Select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value as PeriodoTipo)} className="flex-1">
-                  <option value="mes_atual">Mês atual</option>
-                  <option value="mes_anterior">Mês anterior</option>
+                  <option value="mes_atual">M�s atual</option>
+                  <option value="mes_anterior">M�s anterior</option>
                   <option value="semana_atual">Semana atual</option>
                   <option value="este_ano">Este ano</option>
                   <option value="ano_passado">Ano passado</option>
@@ -281,22 +295,22 @@ export default function FinanceiroPage() {
                   <Input type="date" value={filtroDataIni} onChange={(e) => setFiltroDataIni(e.target.value)} />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-ink-600">Até</label>
+                  <label className="text-xs font-medium text-ink-600">At�</label>
                   <Input type="date" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
                 </div>
               </>
             )}
             {filtroPeriodo === 'mes_atual' || filtroPeriodo === 'mes_anterior' ? (
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-ink-600">Mês/Ano</label>
+                <label className="text-xs font-medium text-ink-600">M�s/Ano</label>
                 <div className="flex gap-1">
                   <Select value={filtroMes} onChange={(e) => setFiltroMes(Number(e.target.value))} className="flex-1">
-                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                    {['Janeiro','Fevereiro','Mar�o','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
                       <option key={i + 1} value={i + 1}>{m.slice(0, 3)}</option>
                     ))}
                   </Select>
                   <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))} className="w-20">
-                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((a) => <option key={a} value={a}>{a}</option>)}
+                    {Array.from({ length: 5 }, (_, i) => anoReferencia - i).map((a) => <option key={a} value={a}>{a}</option>)}
                   </Select>
                 </div>
               </div>
@@ -305,12 +319,12 @@ export default function FinanceiroPage() {
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-ink-600">Ano</label>
                 <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))}>
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((a) => <option key={a} value={a}>{a}</option>)}
+                  {Array.from({ length: 5 }, (_, i) => anoReferencia - i).map((a) => <option key={a} value={a}>{a}</option>)}
                 </Select>
               </div>
             ) : null}
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-ink-600">Veículo</label>
+              <label className="text-xs font-medium text-ink-600">Ve�culo</label>
               <Select value={filtroVeiculo} onChange={(e) => setFiltroVeiculo(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="dou">DOU</option>
@@ -323,7 +337,7 @@ export default function FinanceiroPage() {
               <Select value={filtroStatusNF} onChange={(e) => setFiltroStatusNF(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="emitida">A receber</option>
-                <option value="enviada">Em cobrança</option>
+                <option value="enviada">Em cobran�a</option>
                 <option value="paga">Paga</option>
                 <option value="cancelada">Cancelada</option>
               </Select>
@@ -339,12 +353,12 @@ export default function FinanceiroPage() {
 
           <div className="text-xs text-ink-500 flex items-center gap-2 pt-1 border-t border-ink-100">
             <Filter className="w-3 h-3" />
-            Período ativo: <strong className="text-ink-700">{periodoResolvido.label}</strong>
-            {filtroVeiculo && <span className="text-ink-400">·</span>}
-            {filtroVeiculo && <span>Veículo: <strong className="text-ink-700">{filtroVeiculo.toUpperCase()}</strong></span>}
-            {filtroStatusNF && <span className="text-ink-400">·</span>}
+            Per�odo ativo: <strong className="text-ink-700">{periodoResolvido.label}</strong>
+            {filtroVeiculo && <span className="text-ink-400">�</span>}
+            {filtroVeiculo && <span>Ve�culo: <strong className="text-ink-700">{filtroVeiculo.toUpperCase()}</strong></span>}
+            {filtroStatusNF && <span className="text-ink-400">�</span>}
             {filtroStatusNF && <span>Status: <strong className="text-ink-700">{filtroStatusNF}</strong></span>}
-            {filtroCliente && <span className="text-ink-400">·</span>}
+            {filtroCliente && <span className="text-ink-400">�</span>}
             {filtroCliente && <span>Cliente: <strong className="text-ink-700">{filtroCliente}</strong></span>}
           </div>
         </div>
@@ -355,21 +369,21 @@ export default function FinanceiroPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         <StatCard
           icon={<TrendingUp className="w-5 h-5" />}
-          label="Faturado no período"
+          label="Faturado no per�odo"
           value={format.brl(kpisFiltrados.faturado)}
           hint={periodoResolvido.label}
           accent="brand"
         />
         <StatCard
           icon={<Wallet className="w-5 h-5" />}
-          label="Recebido no período"
+          label="Recebido no per�odo"
           value={format.brl(kpisFiltrados.recebido)}
           hint={periodoResolvido.label}
           accent="green"
         />
         <StatCard
           icon={kpisFiltrados.saldo >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          label="Saldo do período"
+          label="Saldo do per�odo"
           value={format.brl(kpisFiltrados.saldo)}
           hint="faturado - recebido"
           accent={kpisFiltrados.saldo >= 0 ? 'amber' : 'red'}
@@ -384,7 +398,7 @@ export default function FinanceiroPage() {
       </div>
       )}
 
-      {/* Resumo do período (6 ou 12 meses) */}
+      {/* Resumo do per�odo (6 ou 12 meses) */}
       <Card className="mb-5">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -394,7 +408,7 @@ export default function FinanceiroPage() {
                 Faturado vs Recebido
               </CardTitle>
               <CardDescription>
-                <strong className="text-ink-700">{periodoResolvido.label}</strong> · <strong className="text-ink-700">{format.brl(totalFaturadoPeriodo)}</strong> faturado · <strong className="text-emerald-700">{format.brl(totalRecebidoPeriodo)}</strong> recebido · taxa <strong className={taxaRecebimento >= 70 ? 'text-emerald-700' : 'text-amber-700'}>{taxaRecebimento}%</strong>
+                <strong className="text-ink-700">{periodoResolvido.label}</strong> � <strong className="text-ink-700">{format.brl(totalFaturadoPeriodo)}</strong> faturado � <strong className="text-emerald-700">{format.brl(totalRecebidoPeriodo)}</strong> recebido � taxa <strong className={taxaRecebimento >= 70 ? 'text-emerald-700' : 'text-amber-700'}>{taxaRecebimento}%</strong>
               </CardDescription>
             </div>
             <div className="flex items-center gap-1 p-1 bg-ink-100 rounded-pill">
@@ -417,7 +431,7 @@ export default function FinanceiroPage() {
           {caixaFiltrado.length === 0 ? (
             <div className="py-16 text-center text-sm text-ink-500">
               <BarChart3 className="w-12 h-12 mx-auto text-ink-300 mb-3" />
-              Sem movimento no período. Importe NFs pra começar a ver o gráfico.
+              Sem movimento no per�odo. Importe NFs pra come�ar a ver o gr�fico.
             </div>
           ) : (
             <div className="w-full h-72">
@@ -451,7 +465,7 @@ export default function FinanceiroPage() {
         </CardBody>
       </Card>
 
-      {/* Seção 1: NFs pendentes + Top clientes */}
+      {/* Se��o 1: NFs pendentes + Top clientes */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
@@ -461,7 +475,7 @@ export default function FinanceiroPage() {
                   <Clock className="w-4 h-4 text-amber-600" />
                   NFs em aberto
                 </CardTitle>
-                <CardDescription>As mais antigas primeiro — pra priorizar cobrança</CardDescription>
+                <CardDescription>As mais antigas primeiro � pra priorizar cobran�a</CardDescription>
               </div>
               <Link href="/app/notas-fiscais">
                 <Button variant="ghost" size="sm">Ver todas <ChevronRight className="w-3.5 h-3.5" /></Button>
@@ -474,8 +488,8 @@ export default function FinanceiroPage() {
                 <div className="w-12 h-12 mx-auto rounded-pill bg-emerald-100 flex items-center justify-center mb-3">
                   <Wallet className="w-6 h-6 text-emerald-600" />
                 </div>
-                <p className="text-sm font-medium text-ink-700">Tudo em dia! 🎉</p>
-                <p className="text-xs text-ink-500 mt-1">Nenhuma NF pendente no período selecionado.</p>
+                <p className="text-sm font-medium text-ink-700">Tudo em dia! ??</p>
+                <p className="text-xs text-ink-500 mt-1">Nenhuma NF pendente no per�odo selecionado.</p>
               </div>
             ) : (
               <ul className="divide-y divide-ink-100">
@@ -490,8 +504,8 @@ export default function FinanceiroPage() {
                         <div className="text-sm font-medium text-ink-900 truncate">{nf.cliente_nome}</div>
                         <div className="text-xs text-ink-500 mt-0.5 flex items-center gap-1.5">
                           <span>NF #{nf.numero}</span>
-                          {nf.municipio && <><span>•</span><span>{nf.municipio}</span></>}
-                          <span>•</span>
+                          {nf.municipio && <><span>�</span><span>{nf.municipio}</span></>}
+                          <span>�</span>
                           <span>{format.data(nf.data_emissao)}</span>
                         </div>
                       </div>
@@ -517,7 +531,7 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardBody className="p-0">
             {topClientesFiltrados.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-ink-500">Sem dados no período.</div>
+              <div className="px-5 py-8 text-center text-sm text-ink-500">Sem dados no per�odo.</div>
             ) : (
               <ul className="divide-y divide-ink-100">
                 {topClientesFiltrados.map((c, i) => {
@@ -535,8 +549,8 @@ export default function FinanceiroPage() {
                             <div className="text-sm font-semibold text-brand-700 whitespace-nowrap">{format.brl(c.total_faturado)}</div>
                           </div>
                           <div className="flex items-center gap-2 text-xs text-ink-500 mt-0.5">
-                            <span>{c.municipio || '—'}</span>
-                            <span>•</span>
+                            <span>{c.municipio || '�'}</span>
+                            <span>�</span>
                             <span>{c.total_nfs} NF(s)</span>
                           </div>
                           <div className="mt-1.5 h-1 bg-ink-100 rounded-pill overflow-hidden">
@@ -553,7 +567,7 @@ export default function FinanceiroPage() {
         </Card>
       </div>
 
-      {/* Seção 2: Contratos com saldo + visão geral */}
+      {/* Se��o 2: Contratos com saldo + vis�o geral */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
@@ -586,7 +600,7 @@ export default function FinanceiroPage() {
                           <div className="text-sm font-medium text-ink-900 truncate">{c.cliente_nome}</div>
                           <div className="text-xs text-ink-500 mt-0.5 flex items-center gap-2">
                             <span>{c.numero || `Contrato #${c.id}`}</span>
-                            {c.municipio && <><span>•</span><span>{c.municipio}</span></>}
+                            {c.municipio && <><span>�</span><span>{c.municipio}</span></>}
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -600,7 +614,7 @@ export default function FinanceiroPage() {
                       {venceProx && (
                         <div className="mt-1.5 text-[10px] text-amber-600 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" />
-                          Vence em {dias}d — planejar renovações
+                          Vence em {dias}d � planejar renova��es
                         </div>
                       )}
                     </li>
@@ -617,7 +631,7 @@ export default function FinanceiroPage() {
               <Wallet className="w-4 h-4 text-emerald-600" />
               Resumo geral
             </CardTitle>
-            <CardDescription>Acumulado desde o começo</CardDescription>
+            <CardDescription>Acumulado desde o come�o</CardDescription>
           </CardHeader>
           <CardBody>
             <div className="space-y-4">
@@ -657,7 +671,7 @@ export default function FinanceiroPage() {
         </Card>
       </div>
 
-      {/* Seção 2.5: Aging de NFs + Distribuição por veículo */}
+      {/* Se��o 2.5: Aging de NFs + Distribui��o por ve�culo */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
         <Card>
           <CardHeader>
@@ -665,14 +679,14 @@ export default function FinanceiroPage() {
               <Clock className="w-4 h-4 text-amber-600" />
               Aging de NFs a receber
             </CardTitle>
-            <CardDescription>Quanto tempo cada NF tá em aberto — pra priorizar cobrança</CardDescription>
+            <CardDescription>Quanto tempo cada NF t� em aberto � pra priorizar cobran�a</CardDescription>
           </CardHeader>
           <CardBody>
             {(() => {
               const a = data.aging;
               const totalValor = a.ate_30_valor + a.de_31_60_valor + a.de_61_90_valor + a.mais_90_valor;
               if (totalValor === 0) {
-                return <div className="py-10 text-center text-sm text-ink-500">Nenhuma NF em aberto. 🎉</div>;
+                return <div className="py-10 text-center text-sm text-ink-500">Nenhuma NF em aberto. ??</div>;
               }
               const agingData = [
                 { faixa: '0-30d',  qtd: a.ate_30_qtd,  valor: a.ate_30_valor,  cor: '#10B981' },
@@ -689,7 +703,7 @@ export default function FinanceiroPage() {
                         <div className="flex items-center justify-between text-xs mb-1.5">
                           <span className="font-semibold text-ink-700">{f.faixa}</span>
                           <span className="text-ink-500">
-                            <strong className="text-ink-800">{f.qtd}</strong> NF(s) · <strong className="text-ink-800">{format.brl(f.valor)}</strong> · {pct.toFixed(0)}%
+                            <strong className="text-ink-800">{f.qtd}</strong> NF(s) � <strong className="text-ink-800">{format.brl(f.valor)}</strong> � {pct.toFixed(0)}%
                           </span>
                         </div>
                         <div className="h-3 bg-ink-100 rounded-pill overflow-hidden">
@@ -712,9 +726,9 @@ export default function FinanceiroPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-brand-700" />
-              Mix por veículo
+              Mix por ve�culo
             </CardTitle>
-            <CardDescription>Onde está concentrado o faturamento (DOU, DOE, Jornal)</CardDescription>
+            <CardDescription>Onde est� concentrado o faturamento (DOU, DOE, Jornal)</CardDescription>
           </CardHeader>
           <CardBody>
             {data.dist_veiculo.length === 0 ? (
@@ -748,7 +762,7 @@ export default function FinanceiroPage() {
                           <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: cores[v.veiculo_tipo] || '#94A3B8' }} />
                           <span className="font-semibold text-ink-800 flex-1">{labels[v.veiculo_tipo] || v.veiculo_tipo}</span>
                           <span className="text-ink-500 whitespace-nowrap">
-                            {v.qtd_pedidos} pedidos · <strong className="text-ink-800">{format.brl(v.total_valor)}</strong>
+                            {v.qtd_pedidos} pedidos � <strong className="text-ink-800">{format.brl(v.total_valor)}</strong>
                           </span>
                           <span className="font-semibold text-ink-700 w-10 text-right">{pct.toFixed(0)}%</span>
                         </div>
@@ -762,7 +776,7 @@ export default function FinanceiroPage() {
         </Card>
       </div>
 
-      {/* Seção 3: Distribuição por veículo + resumo status */}
+      {/* Se��o 3: Distribui��o por ve�culo + resumo status */}
       <div className="grid sm:grid-cols-3 gap-4">
         <Card className="p-5">
           <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">Faturado total</p>
@@ -772,7 +786,7 @@ export default function FinanceiroPage() {
           <p className="text-xs text-ink-500 mt-1">emitido + cancelado</p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">% já recebido</p>
+          <p className="text-xs text-ink-500 uppercase tracking-wider font-medium">% j� recebido</p>
           <p className="mt-2 text-2xl font-bold text-emerald-700">
             {data.kpis_mes.total_recebido + data.kpis_mes.total_a_receber > 0
               ? Math.round((data.kpis_mes.total_recebido / (data.kpis_mes.total_recebido + data.kpis_mes.total_a_receber)) * 100)
