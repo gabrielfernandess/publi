@@ -151,10 +151,12 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
           <div className="p-5">
             <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Detalhes do contrato</p>
             <h3 className="text-base font-bold text-ink-900">{data.cliente_municipio}{data.cliente_estado ? ` - ${data.cliente_estado}` : ''}</h3>
-            <p className="text-xs text-ink-500 mt-0.5">{data.cliente_nome}</p>
+            <span className={cn('inline-block mt-2 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider', st.cor)}>
+              {st.label}
+            </span>
             <dl className="mt-4 space-y-2 text-xs">
               <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Contrato</dt><dd className="font-mono text-ink-800">{data.numero || `#${data.id}`}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Vigência</dt><dd className="text-ink-800 text-right">{format.data(data.data_inicio)} → {format.data(data.data_fim)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Vigência</dt><dd className="text-ink-800 text-right">{format.data(data.data_inicio)} a {format.data(data.data_fim)}</dd></div>
               <div className="flex justify-between gap-3">
                 <dt className="text-ink-500 whitespace-nowrap">Dias restantes</dt>
                 <dd className={cn('font-semibold', (data.dias_para_vencer ?? 0) < 0 ? 'text-red-600' : (data.dias_para_vencer ?? 0) <= 60 ? 'text-amber-600' : 'text-ink-800')}>
@@ -163,18 +165,12 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                     : '—'}
                 </dd>
               </div>
-              {data.objeto && (
-                <div className="pt-2 border-t border-ink-100">
-                  <dt className="text-ink-500 mb-1">Objeto</dt>
-                  <dd className="text-ink-700 leading-relaxed">{data.objeto}</dd>
-                </div>
-              )}
+              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Data de assinatura</dt><dd className="text-ink-800">{format.data(data.data_inicio)}</dd></div>
+              <div className="pt-2 border-t border-ink-100">
+                <dt className="text-ink-500 mb-1">Observações</dt>
+                <dd className="text-ink-700 leading-relaxed">{data.objeto || '—'}</dd>
+              </div>
             </dl>
-            {isAdmin && (
-              <Button variant="outline" size="sm" className="mt-4 w-full">
-                <Edit2 className="w-3.5 h-3.5" />Editar contrato
-              </Button>
-            )}
           </div>
         </Card>
 
@@ -199,32 +195,28 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                 const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
                 return (
                   <div key={tipo} className={cn('rounded-lg border border-ink-200 p-3', meta.bg)}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={cn('w-7 h-7 rounded-md bg-white flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
-                        <span className="text-xs font-semibold text-ink-700">{pct.toFixed(0)}% utilizado</span>
-                      </div>
-                      <span className={cn('text-sm font-bold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>
-                        {format.cm(v.cm_disponivel)} <span className="text-[10px] font-normal text-ink-500">disp</span>
-                      </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={cn('w-7 h-7 rounded-md bg-white flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
+                      <span className="text-sm font-bold text-ink-900">{meta.label}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-2 text-[11px]">
-                      <div>
-                        <div className="text-ink-500">Contratado</div>
-                        <div className="font-mono font-semibold text-ink-900">{format.cm(v.cm_contratado)}</div>
-                      </div>
-                      <div>
-                        <div className="text-ink-500">Faturado</div>
-                        <div className={cn('font-mono font-semibold', corFaturado(pct))}>{format.cm(v.cm_utilizado)}</div>
-                      </div>
-                      <div>
-                        <div className="text-ink-500">Disponível</div>
-                        <div className={cn('font-mono font-semibold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>{format.cm(v.cm_disponivel)}</div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between"><span className="text-ink-600">Contratado</span><span className="font-mono font-semibold text-ink-900">{format.cm(v.cm_contratado)}</span></div>
+                      <div className="flex justify-between"><span className="text-ink-600">Faturado</span><span className={cn('font-mono font-semibold', corFaturado(pct))}>{format.cm(v.cm_utilizado)}</span></div>
+                      <div className="flex justify-between"><span className="text-ink-600">Disponível</span><span className={cn('font-mono font-semibold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>{format.cm(v.cm_disponivel)}</span></div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-ink-600">Utilizado</span>
+                        <span className={cn('font-mono font-semibold', corFaturado(pct))}>{pct.toFixed(0)}%</span>
                       </div>
                     </div>
                     <div className="mt-2 h-1.5 bg-white rounded-pill overflow-hidden">
                       <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
                     </div>
+                    <a
+                      href="#movimentacoes"
+                      className="mt-2 inline-flex items-center justify-center gap-1 w-full text-xs text-brand-700 hover:text-brand-900 border border-brand-200 hover:border-brand-300 rounded-md py-1 transition-colors"
+                    >
+                      Ver movimentações <span>→</span>
+                    </a>
                   </div>
                 );
               })}
@@ -237,12 +229,32 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
           <div className="p-5">
             <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Informações do contrato</p>
             <dl className="space-y-2 text-xs">
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Status</dt><dd className="font-semibold text-ink-800 capitalize">{data.status}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Modalidade</dt><dd className="text-ink-800 capitalize">{data.modalidade || '—'}</dd></div>
-              {data.processo && <div className="flex justify-between gap-3"><dt className="text-ink-500">Processo</dt><dd className="font-mono text-ink-800">{data.processo}</dd></div>}
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor contratado</dt><dd className="font-semibold text-ink-900">{format.brl(totalValorVenda)}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor utilizado</dt><dd className="font-semibold text-ink-900">{format.brl(totalValorUtilizado)}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Total cm</dt><dd className="font-mono text-ink-800">{format.cm(totalContratado)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500">Forma de faturamento</dt><dd className="text-ink-800">—</dd></div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-ink-500">Veículos contratados</dt>
+                <dd className="flex items-center gap-1">
+                  {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
+                    const ativo = !!cmPorVeiculo[tipo];
+                    return (
+                      <span
+                        key={tipo}
+                        className={cn(
+                          'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
+                          ativo
+                            ? (tipo === 'dou' ? 'bg-navy-100 text-navy-700' : tipo === 'doe' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')
+                            : 'bg-ink-100 text-ink-400 line-through'
+                        )}
+                      >
+                        {tipo}
+                      </span>
+                    );
+                  })}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor do centímetro</dt><dd className="font-semibold text-ink-900">{totalContratado > 0 ? format.brl(totalValorVenda / totalContratado) : '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500">Índice de reajuste</dt><dd className="text-ink-800">—</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500">Contato responsável</dt><dd className="text-ink-800">—</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-ink-500">E-mail</dt><dd className="text-ink-800">—</dd></div>
               <div className="pt-3 border-t border-ink-100">
                 <dt className="text-ink-500 mb-1">Uso total do contrato</dt>
                 <div className="flex items-center gap-2">
@@ -253,12 +265,17 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                 </div>
               </div>
             </dl>
+            {isAdmin && (
+              <Button variant="outline" size="sm" className="mt-4 w-full">
+                <Edit2 className="w-3.5 h-3.5" />Editar contrato
+              </Button>
+            )}
           </div>
         </Card>
       </div>
 
       {/* Movimentações do contrato */}
-      <Card>
+      <Card id="movimentacoes">
         <div className="p-5 border-b border-ink-100 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-bold text-ink-900 flex items-center gap-2">
