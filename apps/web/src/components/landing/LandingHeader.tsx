@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 const links = [
-  { href: '#sobre', label: 'Sobre' },
+  { href: '#sobre', label: 'Quem somos' },
   { href: '#servicos', label: 'Serviços' },
-  { href: '#como-funciona', label: 'Como funciona' },
-  { href: '#clientes', label: 'Clientes' },
+  { href: '#metodo', label: 'Método' },
+  { href: '#resultados', label: 'Resultados' },
   { href: '#contato', label: 'Contato' },
 ];
 
@@ -34,7 +34,7 @@ export function LandingHeader() {
     >
       <div className="container-page flex items-center justify-between h-16 lg:h-20">
         <Link href="/">
-          <img src="/logo-clean-white.png?v=2" alt="Publi Legal" className="h-8 w-auto hover:opacity-90 transition-opacity" />
+          <img src="/logo-mark-white.png?v=4" alt="Publi Legal" className="h-12 w-auto hover:opacity-90 transition-opacity" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
