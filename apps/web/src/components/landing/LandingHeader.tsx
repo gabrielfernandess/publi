@@ -34,7 +34,7 @@ export function LandingHeader() {
     >
       <div className="container-page flex items-center justify-between h-16 lg:h-20">
         <Link href="/">
-          <img src="/logo-clean-white.png" alt="Publi Legal" className="h-9 w-auto hover:opacity-90 transition-opacity" />
+          <img src="/logo-clean-white.png?v=2" alt="Publi Legal" className="h-8 w-auto hover:opacity-90 transition-opacity" />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
