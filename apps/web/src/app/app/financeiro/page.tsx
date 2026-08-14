@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  TrendingUp, TrendingDown, Wallet, AlertTriangle, BarChart3, Users, ArrowUp, ArrowDown, Clock, FileText, Building2, ChevronRight, Download, Filter,
+  TrendingUp, TrendingDown, Wallet, AlertTriangle, BarChart3, Users, ArrowUp, ArrowDown, Clock, FileText, Building2, ChevronRight, Download, Filter, X, Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -12,6 +12,8 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Card, CardHeader, CardTitle, CardDescription, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
 import { format, diasAte } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import {
@@ -57,6 +59,17 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState<'6m' | '12m'>('12m');
 
+  // ====== Filtros ======
+  type PeriodoTipo = 'mes_atual' | 'mes_anterior' | 'semana_atual' | 'este_ano' | 'ano_passado' | 'personalizado';
+  const [filtroPeriodo, setFiltroPeriodo] = useState<PeriodoTipo>('mes_atual');
+  const [filtroMes, setFiltroMes] = useState<number>(new Date().getMonth() + 1);
+  const [filtroAno, setFiltroAno] = useState<number>(new Date().getFullYear());
+  const [filtroDataIni, setFiltroDataIni] = useState<string>('');
+  const [filtroDataFim, setFiltroDataFim] = useState<string>('');
+  const [filtroVeiculo, setFiltroVeiculo] = useState<string>('');
+  const [filtroStatusNF, setFiltroStatusNF] = useState<string>('');
+  const [filtroCliente, setFiltroCliente] = useState<string>('');
+
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -67,6 +80,93 @@ export default function FinanceiroPage() {
       setContratos(c.data);
     }).finally(() => setLoading(false));
   }, []);
+
+  // ====== Período resolvido (data_inicio, data_fim, label) ======
+  const periodoResolvido = useMemo(() => {
+    const hoje = new Date();
+    const y = hoje.getFullYear();
+    const m = hoje.getMonth(); // 0-11
+
+    if (filtroPeriodo === 'mes_atual') {
+      const ini = new Date(y, m, 1);
+      const fim = new Date(y, m + 1, 0);
+      return { ini, fim, label: `${mesCurto(`${y}-${String(m + 1).padStart(2, '0')}`)}` };
+    }
+    if (filtroPeriodo === 'mes_anterior') {
+      const ref = m === 0 ? 11 : m - 1;
+      const yy = m === 0 ? y - 1 : y;
+      const ini = new Date(yy, ref, 1);
+      const fim = new Date(yy, ref + 1, 0);
+      return { ini, fim, label: `${mesCurto(`${yy}-${String(ref + 1).padStart(2, '0')}`)}` };
+    }
+    if (filtroPeriodo === 'semana_atual') {
+      const d = new Date(hoje);
+      const dow = d.getDay() || 7; // dom=0 => 7
+      d.setDate(d.getDate() - (dow - 1));
+      const ini = new Date(d);
+      const fim = new Date(d);
+      fim.setDate(ini.getDate() + 6);
+      return { ini, fim, label: `Sem ${format.data(ini.toISOString().slice(0, 10))} a ${format.data(fim.toISOString().slice(0, 10))}` };
+    }
+    if (filtroPeriodo === 'este_ano') {
+      return { ini: new Date(y, 0, 1), fim: new Date(y, 11, 31), label: `${y}` };
+    }
+    if (filtroPeriodo === 'ano_passado') {
+      return { ini: new Date(y - 1, 0, 1), fim: new Date(y - 1, 11, 31), label: `${y - 1}` };
+    }
+    // personalizado — usa mes/ano OU datas manuais
+    if (filtroDataIni && filtroDataFim) {
+      return { ini: new Date(filtroDataIni), fim: new Date(filtroDataFim), label: `${format.data(filtroDataIni)} → ${format.data(filtroDataFim)}` };
+    }
+    // fallback: usa filtroMes/filtroAno
+    const ini = new Date(filtroAno, filtroMes - 1, 1);
+    const fim = new Date(filtroAno, filtroMes, 0);
+    return { ini, fim, label: `${mesCurto(`${filtroAno}-${String(filtroMes).padStart(2, '0')}`)}` };
+  }, [filtroPeriodo, filtroMes, filtroAno, filtroDataIni, filtroDataFim]);
+
+  const emPeriodo = (iso: string) => {
+    if (!iso) return true;
+    const d = new Date(iso);
+    return d >= periodoResolvido.ini && d <= periodoResolvido.fim;
+  };
+
+  // ====== Clientes únicos (do top_clientes + nfs_pendentes) ======
+  const clientesUnicos = useMemo(() => {
+    const set = new Set<string>();
+    if (data) {
+      data.top_clientes.forEach((c) => set.add(c.cliente_nome));
+      data.nfs_pendentes.forEach((n) => set.add(n.cliente_nome));
+    }
+    return Array.from(set).sort();
+  }, [data]);
+
+  // ====== KPIs filtrados (mês atual sempre do backend, mas filtra por veículo) ======
+  const kpisFiltrados = useMemo(() => {
+    if (!data) return null;
+    // nfs do período pra recalcular KPIs por veículo/status
+    const nfsPeriodo = data.nfs_pendentes.filter((n) => {
+      if (!emPeriodo(n.data_emissao)) return false;
+      if (filtroVeiculo && (n as any).veiculo_tipo && (n as any).veiculo_tipo !== filtroVeiculo) return false;
+      if (filtroStatusNF && n.status !== filtroStatusNF) return false;
+      if (filtroCliente && n.cliente_nome !== filtroCliente) return false;
+      return true;
+    });
+    const nfsPagas = nfsPeriodo.filter((n) => n.status === 'paga').reduce((a, n) => a + n.valor, 0);
+    const nfsAReceber = nfsPeriodo.filter((n) => n.status === 'emitida' || n.status === 'enviada').reduce((a, n) => a + n.valor, 0);
+    const nfsAtrasadas = nfsPeriodo.filter((n) => {
+      const d = new Date(n.data_emissao);
+      const dias = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+      return dias > 60;
+    });
+    // considera "atrasada" como emitida/enviada há mais de 60d
+    return {
+      faturado: nfsPeriodo.filter((n) => n.status !== 'cancelada').reduce((a, n) => a + n.valor, 0),
+      recebido: nfsPagas,
+      saldo: nfsPagas - nfsPeriodo.filter((n) => n.status !== 'cancelada' && n.status !== 'paga').reduce((a, n) => a + n.valor, 0),
+      atrasadas_qtd: nfsAtrasadas.length,
+      atrasadas_valor: nfsAtrasadas.reduce((a, n) => a + n.valor, 0),
+    };
+  }, [data, filtroVeiculo, filtroStatusNF, filtroCliente, periodoResolvido]);
 
   if (loading) {
     return (
@@ -82,20 +182,65 @@ export default function FinanceiroPage() {
 
   if (!data) return <div className="text-sm text-ink-500">Falha ao carregar.</div>;
 
-  const caixaFiltrado = periodo === '6m' ? data.caixa_por_mes.slice(-6) : data.caixa_por_mes;
-  const caixaFormatado = caixaFiltrado.map((m) => ({ ...m, mesLabel: mesCurto(m.mes) }));
+  // ====== Caixa filtrado por veículo + período ======
+  const caixaFiltrado = useMemo(() => {
+    if (!data) return [];
+    // caixa_por_mes vem do backend; se filtroPeriodo é específico, filtra pelos meses dentro do período
+    return data.caixa_por_mes.filter((m) => {
+      const [ano, mm] = m.mes.split('-').map(Number);
+      const dIni = new Date(ano, mm - 1, 1);
+      const dFim = new Date(ano, mm, 0);
+      return dIni <= periodoResolvido.fim && dFim >= periodoResolvido.ini;
+    });
+  }, [data, periodoResolvido]);
+
+  // limite de meses visíveis (se for anual e filtrou pra mais de 6, mostra todos)
+  const caixaMostrar = periodo === '6m' ? caixaFiltrado.slice(-6) : caixaFiltrado;
+  const caixaFormatado = caixaMostrar.map((m) => ({ ...m, mesLabel: mesCurto(m.mes) }));
+
+  // ====== NFs pendentes filtradas ======
+  const nfsPendentesFiltradas = useMemo(() => {
+    return data.nfs_pendentes.filter((n) => {
+      if (!emPeriodo(n.data_emissao)) return false;
+      if (filtroStatusNF && n.status !== filtroStatusNF) return false;
+      if (filtroCliente && n.cliente_nome !== filtroCliente) return false;
+      return true;
+    }).slice(0, 6);
+  }, [data, filtroStatusNF, filtroCliente, periodoResolvido]);
+
+  // ====== Top clientes filtrados ======
+  const topClientesFiltrados = useMemo(() => {
+    // não temos data por cliente; mantemos todos os top_clientes e filtramos pelo nome
+    return data.top_clientes.filter((c) => !filtroCliente || c.cliente_nome === filtroCliente).slice(0, 6);
+  }, [data, filtroCliente]);
 
   // cálculos
-  const totalFaturadoPeriodo = caixaFiltrado.reduce((acc, m) => acc + (m.faturado || 0), 0);
-  const totalRecebidoPeriodo = caixaFiltrado.reduce((acc, m) => acc + (m.recebido || 0), 0);
+  const totalFaturadoPeriodo = caixaMostrar.reduce((acc, m) => acc + (m.faturado || 0), 0);
+  const totalRecebidoPeriodo = caixaMostrar.reduce((acc, m) => acc + (m.recebido || 0), 0);
   const taxaRecebimento = totalFaturadoPeriodo > 0 ? Math.round((totalRecebidoPeriodo / totalFaturadoPeriodo) * 100) : 0;
 
-  // top 5 contratos por saldo a faturar
-  const topContratos = contratos
-    .map((c) => ({ ...c, saldo: c.valor_total_venda - c.valor_utilizado }))
-    .filter((c) => c.saldo > 0)
-    .sort((a, b) => b.saldo - a.saldo)
-    .slice(0, 5);
+  // top 5 contratos por saldo a faturar (filtra por veículo se cliente tem contrato com aquele veículo)
+  const topContratos = useMemo(() => {
+    return contratos
+      .map((c) => ({ ...c, saldo: c.valor_total_venda - c.valor_utilizado }))
+      .filter((c) => c.saldo > 0)
+      .filter((c) => !filtroCliente || c.cliente_nome === filtroCliente)
+      .sort((a, b) => b.saldo - a.saldo)
+      .slice(0, 5);
+  }, [contratos, filtroCliente]);
+
+  const clearFiltros = () => {
+    setFiltroPeriodo('mes_atual');
+    setFiltroMes(new Date().getMonth() + 1);
+    setFiltroAno(new Date().getFullYear());
+    setFiltroDataIni('');
+    setFiltroDataFim('');
+    setFiltroVeiculo('');
+    setFiltroStatusNF('');
+    setFiltroCliente('');
+  };
+
+  const temFiltro = filtroPeriodo !== 'mes_atual' || filtroVeiculo || filtroStatusNF || filtroCliente || filtroDataIni || filtroDataFim;
 
   return (
     <div>
@@ -104,37 +249,140 @@ export default function FinanceiroPage() {
         description="O caixa da Publi Legal: o que saiu, o que entrou e o que falta receber."
       />
 
-      {/* KPIs do mês atual */}
+      {/* ============ BARRA DE FILTROS ============ */}
+      <Card className="mb-5">
+        <div className="p-4 space-y-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 flex gap-2">
+              <div className="flex items-center gap-2 flex-1">
+                <Calendar className="w-4 h-4 text-ink-500" />
+                <Select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value as PeriodoTipo)} className="flex-1">
+                  <option value="mes_atual">Mês atual</option>
+                  <option value="mes_anterior">Mês anterior</option>
+                  <option value="semana_atual">Semana atual</option>
+                  <option value="este_ano">Este ano</option>
+                  <option value="ano_passado">Ano passado</option>
+                  <option value="personalizado">Personalizado</option>
+                </Select>
+              </div>
+              {temFiltro && (
+                <Button variant="outline" size="sm" onClick={clearFiltros} className="border-ink-300">
+                  <X className="w-3.5 h-3.5" />Limpar
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            {filtroPeriodo === 'personalizado' && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-ink-600">De</label>
+                  <Input type="date" value={filtroDataIni} onChange={(e) => setFiltroDataIni(e.target.value)} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium text-ink-600">Até</label>
+                  <Input type="date" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
+                </div>
+              </>
+            )}
+            {filtroPeriodo === 'mes_atual' || filtroPeriodo === 'mes_anterior' ? (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-ink-600">Mês/Ano</label>
+                <div className="flex gap-1">
+                  <Select value={filtroMes} onChange={(e) => setFiltroMes(Number(e.target.value))} className="flex-1">
+                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                      <option key={i + 1} value={i + 1}>{m.slice(0, 3)}</option>
+                    ))}
+                  </Select>
+                  <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))} className="w-20">
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((a) => <option key={a} value={a}>{a}</option>)}
+                  </Select>
+                </div>
+              </div>
+            ) : null}
+            {filtroPeriodo === 'este_ano' || filtroPeriodo === 'ano_passado' ? (
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-ink-600">Ano</label>
+                <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))}>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((a) => <option key={a} value={a}>{a}</option>)}
+                </Select>
+              </div>
+            ) : null}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-ink-600">Veículo</label>
+              <Select value={filtroVeiculo} onChange={(e) => setFiltroVeiculo(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="dou">DOU</option>
+                <option value="doe">DOE</option>
+                <option value="jornal">JORNAL</option>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-ink-600">Status NF</label>
+              <Select value={filtroStatusNF} onChange={(e) => setFiltroStatusNF(e.target.value)}>
+                <option value="">Todos</option>
+                <option value="emitida">A receber</option>
+                <option value="enviada">Em cobrança</option>
+                <option value="paga">Paga</option>
+                <option value="cancelada">Cancelada</option>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-ink-600">Cliente</label>
+              <Select value={filtroCliente} onChange={(e) => setFiltroCliente(e.target.value)}>
+                <option value="">Todos</option>
+                {clientesUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            </div>
+          </div>
+
+          <div className="text-xs text-ink-500 flex items-center gap-2 pt-1 border-t border-ink-100">
+            <Filter className="w-3 h-3" />
+            Período ativo: <strong className="text-ink-700">{periodoResolvido.label}</strong>
+            {filtroVeiculo && <span className="text-ink-400">·</span>}
+            {filtroVeiculo && <span>Veículo: <strong className="text-ink-700">{filtroVeiculo.toUpperCase()}</strong></span>}
+            {filtroStatusNF && <span className="text-ink-400">·</span>}
+            {filtroStatusNF && <span>Status: <strong className="text-ink-700">{filtroStatusNF}</strong></span>}
+            {filtroCliente && <span className="text-ink-400">·</span>}
+            {filtroCliente && <span>Cliente: <strong className="text-ink-700">{filtroCliente}</strong></span>}
+          </div>
+        </div>
+      </Card>
+
+      {/* KPIs filtrados */}
+      {kpisFiltrados && (
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
         <StatCard
           icon={<TrendingUp className="w-5 h-5" />}
-          label="Faturado no mês"
-          value={format.brl(data.kpis_mes.faturado_mes)}
-          hint={data.kpis_mes.mes}
+          label="Faturado no período"
+          value={format.brl(kpisFiltrados.faturado)}
+          hint={periodoResolvido.label}
           accent="brand"
         />
         <StatCard
           icon={<Wallet className="w-5 h-5" />}
-          label="Recebido no mês"
-          value={format.brl(data.kpis_mes.recebido_mes)}
-          hint={data.kpis_mes.mes}
+          label="Recebido no período"
+          value={format.brl(kpisFiltrados.recebido)}
+          hint={periodoResolvido.label}
           accent="green"
         />
         <StatCard
-          icon={data.kpis_mes.saldo_mes >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
-          label="Saldo do mês"
-          value={format.brl(data.kpis_mes.saldo_mes)}
+          icon={kpisFiltrados.saldo >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
+          label="Saldo do período"
+          value={format.brl(kpisFiltrados.saldo)}
           hint="faturado - recebido"
-          accent={data.kpis_mes.saldo_mes >= 0 ? 'amber' : 'red'}
+          accent={kpisFiltrados.saldo >= 0 ? 'amber' : 'red'}
         />
         <StatCard
           icon={<AlertTriangle className="w-5 h-5" />}
           label="Atrasadas (+60d)"
-          value={`${data.nfs_atrasadas.qtd} NF(s)`}
-          hint={format.brl(data.nfs_atrasadas.valor_total)}
-          accent={data.nfs_atrasadas.qtd > 0 ? 'red' : 'brand'}
+          value={`${kpisFiltrados.atrasadas_qtd} NF(s)`}
+          hint={format.brl(kpisFiltrados.atrasadas_valor)}
+          accent={kpisFiltrados.atrasadas_qtd > 0 ? 'red' : 'brand'}
         />
       </div>
+      )}
 
       {/* Resumo do período (6 ou 12 meses) */}
       <Card className="mb-5">
@@ -146,7 +394,7 @@ export default function FinanceiroPage() {
                 Faturado vs Recebido
               </CardTitle>
               <CardDescription>
-                Período: <strong className="text-ink-700">{format.brl(totalFaturadoPeriodo)}</strong> faturado · <strong className="text-emerald-700">{format.brl(totalRecebidoPeriodo)}</strong> recebido · taxa de recebimento <strong className={taxaRecebimento >= 70 ? 'text-emerald-700' : 'text-amber-700'}>{taxaRecebimento}%</strong>
+                <strong className="text-ink-700">{periodoResolvido.label}</strong> · <strong className="text-ink-700">{format.brl(totalFaturadoPeriodo)}</strong> faturado · <strong className="text-emerald-700">{format.brl(totalRecebidoPeriodo)}</strong> recebido · taxa <strong className={taxaRecebimento >= 70 ? 'text-emerald-700' : 'text-amber-700'}>{taxaRecebimento}%</strong>
               </CardDescription>
             </div>
             <div className="flex items-center gap-1 p-1 bg-ink-100 rounded-pill">
@@ -221,17 +469,17 @@ export default function FinanceiroPage() {
             </div>
           </CardHeader>
           <CardBody className="p-0">
-            {data.nfs_pendentes.length === 0 ? (
+            {nfsPendentesFiltradas.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <div className="w-12 h-12 mx-auto rounded-pill bg-emerald-100 flex items-center justify-center mb-3">
                   <Wallet className="w-6 h-6 text-emerald-600" />
                 </div>
                 <p className="text-sm font-medium text-ink-700">Tudo em dia! 🎉</p>
-                <p className="text-xs text-ink-500 mt-1">Nenhuma NF pendente de recebimento.</p>
+                <p className="text-xs text-ink-500 mt-1">Nenhuma NF pendente no período selecionado.</p>
               </div>
             ) : (
               <ul className="divide-y divide-ink-100">
-                {data.nfs_pendentes.slice(0, 6).map((nf) => {
+                {nfsPendentesFiltradas.map((nf) => {
                   const s = STATUS_NF[nf.status] || STATUS_NF.emitida;
                   return (
                     <li key={nf.id} className="px-5 py-3 flex items-center gap-3 hover:bg-ink-50/40 transition-colors">
@@ -268,12 +516,12 @@ export default function FinanceiroPage() {
             <CardDescription>Quem mais gera receita acumulada</CardDescription>
           </CardHeader>
           <CardBody className="p-0">
-            {data.top_clientes.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-ink-500">Sem dados ainda.</div>
+            {topClientesFiltrados.length === 0 ? (
+              <div className="px-5 py-8 text-center text-sm text-ink-500">Sem dados no período.</div>
             ) : (
               <ul className="divide-y divide-ink-100">
-                {data.top_clientes.slice(0, 6).map((c, i) => {
-                  const max = data.top_clientes[0]?.total_faturado || 1;
+                {topClientesFiltrados.map((c, i) => {
+                  const max = topClientesFiltrados[0]?.total_faturado || 1;
                   const pct = (c.total_faturado / max) * 100;
                   return (
                     <li key={c.cliente_nome} className="px-5 py-3">
