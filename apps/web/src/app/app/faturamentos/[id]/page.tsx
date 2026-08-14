@@ -138,9 +138,8 @@ export default function FaturamentoDetalhePage() {
               {st.label}
             </span>
             {isAdmin && (
-              <Button variant="outline" rounded="md">
-                Mais ações
-                <ChevronDown className="w-3.5 h-3.5" />
+              <Button variant="outline" rounded="md" onClick={imprimir}>
+                <Printer className="w-4 h-4" />Imprimir
               </Button>
             )}
           </div>
