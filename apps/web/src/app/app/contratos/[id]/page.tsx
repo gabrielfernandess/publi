@@ -2,16 +2,20 @@
 
 import { useEffect, useState, use as usePromise } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, AlertTriangle, Edit2, Receipt, Building2 } from 'lucide-react';
+import { ArrowLeft, FileText, AlertTriangle, Edit2, Receipt, Building2, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
 import { useIsAdmin } from '@/lib/auth';
 import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { VEICULO_STYLE, corFaturado, corBarra } from '../shared';
 
 type VeiculoResumo = { cm_contratado: number; cm_utilizado: number; cm_disponivel: number };
 type CmPorVeiculo = { dou?: VeiculoResumo; doe?: VeiculoResumo; jornal?: VeiculoResumo };
@@ -57,24 +61,6 @@ type Movimentacao = {
   usuario_nome: string;
   observacoes?: string;
 };
-
-const VEICULO_STYLE: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  dou:    { bg: 'bg-navy-50',     text: 'text-navy-700',     dot: 'bg-navy-600',     label: 'DOU' },
-  doe:    { bg: 'bg-emerald-50',  text: 'text-emerald-700',  dot: 'bg-emerald-600',  label: 'DOE' },
-  jornal: { bg: 'bg-amber-50',    text: 'text-amber-700',    dot: 'bg-amber-600',    label: 'JORNAL' },
-};
-
-function corFaturado(pct: number): string {
-  if (pct >= 90) return 'text-red-600';
-  if (pct >= 70) return 'text-amber-600';
-  return 'text-emerald-700';
-}
-
-function corBarra(pct: number): string {
-  if (pct >= 90) return 'bg-red-500';
-  if (pct >= 70) return 'bg-amber-500';
-  return 'bg-emerald-500';
-}
 
 function statusContrato(c: { status: string; dias_para_vencer: number | null; itens?: any[]; cm_total_contratado?: number; cm_total_utilizado?: number }): { label: string; cor: string } {
   const dias = c.dias_para_vencer;
@@ -177,45 +163,96 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
             Contrato {data.numero || `#${data.id}`}
           </h1>
         </div>
-        <span className={cn('inline-flex items-center px-3 py-1.5 rounded-pill text-xs font-bold uppercase tracking-wider', st.cor)}>
-          {st.label}
-        </span>
+        <Badge className={cn('px-3 py-1.5 text-xs', st.cor)}>{st.label}</Badge>
       </div>
 
-      {/* 3 cards: Detalhes / Saldos por Veículo / Informações */}
-      <div className="grid lg:grid-cols-3 gap-4 mb-5">
-        {/* Detalhes do contrato */}
+      {/* Layout 2 colunas: Detalhes & Informações (esq) + Saldos por Veículo (dir) */}
+      <div className="grid lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-4 mb-5">
+        {/* Detalhes & Informações (esquerda) */}
         <Card>
-          <div className="p-5">
-            <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Detalhes do contrato</p>
-            <h3 className="text-base font-bold text-ink-900">{data.cliente_municipio}{data.cliente_estado ? ` - ${data.cliente_estado}` : ''}</h3>
-            <span className={cn('inline-block mt-2 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider', st.cor)}>
-              {st.label}
-            </span>
-            <dl className="mt-4 space-y-2 text-xs">
-              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Contrato</dt><dd className="font-mono text-ink-800">{data.numero || `#${data.id}`}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Vigência</dt><dd className="text-ink-800 text-right">{format.data(data.data_inicio)} a {format.data(data.data_fim)}</dd></div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-ink-500 whitespace-nowrap">Dias restantes</dt>
-                <dd className={cn('font-semibold', (data.dias_para_vencer ?? 0) < 0 ? 'text-red-600' : (data.dias_para_vencer ?? 0) <= 60 ? 'text-amber-600' : 'text-ink-800')}>
-                  {data.dias_para_vencer !== null
-                    ? (data.dias_para_vencer < 0 ? `${Math.abs(data.dias_para_vencer)}d vencido` : `${data.dias_para_vencer}d`)
-                    : '—'}
-                </dd>
+          <div className="p-5 space-y-5">
+            {/* Seção: Detalhes */}
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-ink-900">Detalhes do contrato</p>
+                <Badge className={cn('text-xs', st.cor)}>{st.label}</Badge>
               </div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Data de assinatura</dt><dd className="text-ink-800">{format.data(data.data_inicio)}</dd></div>
-              <div className="pt-2 border-t border-ink-100">
-                <dt className="text-ink-500 mb-1">Observações</dt>
-                <dd className="text-ink-700 leading-relaxed">{data.objeto || '—'}</dd>
-              </div>
-            </dl>
+              <h3 className="text-base font-bold text-ink-900 mt-1">{data.cliente_municipio}{data.cliente_estado ? ` - ${data.cliente_estado}` : ''}</h3>
+              <dl className="mt-3 space-y-2 text-xs">
+                <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Contrato</dt><dd className="font-mono text-ink-800">{data.numero || `#${data.id}`}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Vigência</dt><dd className="text-ink-800 text-right">{format.data(data.data_inicio)} a {format.data(data.data_fim)}</dd></div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-500 whitespace-nowrap">Dias restantes</dt>
+                  <dd className={cn('font-semibold', (data.dias_para_vencer ?? 0) < 0 ? 'text-red-600' : (data.dias_para_vencer ?? 0) <= 60 ? 'text-amber-600' : 'text-ink-800')}>
+                    {data.dias_para_vencer !== null
+                      ? (data.dias_para_vencer < 0 ? `${Math.abs(data.dias_para_vencer)}d vencido` : `${data.dias_para_vencer}d`)
+                      : '—'}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500 whitespace-nowrap">Data de assinatura</dt><dd className="text-ink-800">{format.data(data.data_inicio)}</dd></div>
+                <div className="pt-2 border-t border-ink-100">
+                  <dt className="text-ink-500 mb-1">Observações</dt>
+                  <dd className="text-ink-700 leading-relaxed">{data.objeto || '—'}</dd>
+                </div>
+              </dl>
+            </div>
+
+            {/* Divisor */}
+            <div className="border-t border-ink-100" />
+
+            {/* Seção: Informações */}
+            <div>
+              <p className="text-sm font-semibold text-ink-900 mb-3">Informações do contrato</p>
+              <dl className="space-y-2 text-xs">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-500">Veículos contratados</dt>
+                  <dd className="flex items-center gap-1">
+                    {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
+                      const ativo = !!cmPorVeiculo[tipo];
+                      const meta = VEICULO_STYLE[tipo];
+                      return (
+                        <span
+                          key={tipo}
+                          className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
+                            ativo ? cn('bg-white border', meta.text, 'border-current') : 'bg-ink-100 text-ink-400 line-through'
+                          )}
+                        >
+                          {meta.label}
+                        </span>
+                      );
+                    })}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor do centímetro</dt><dd className="font-semibold text-ink-900">{totalContratado > 0 ? format.brl(totalValorVenda / totalContratado) : '—'}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500">Forma de faturamento</dt><dd className="text-ink-800">—</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500">Índice de reajuste</dt><dd className="text-ink-800">—</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500">Contato responsável</dt><dd className="text-ink-800">—</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-ink-500">E-mail</dt><dd className="text-ink-800">—</dd></div>
+                <div className="pt-3 border-t border-ink-100">
+                  <dt className="text-ink-500 mb-1">Uso total do contrato</dt>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-ink-100 rounded-pill overflow-hidden">
+                      <div className={cn('h-full', corBarra(totalPct))} style={{ width: `${Math.min(100, totalPct)}%` }} />
+                    </div>
+                    <span className={cn('text-xs font-bold', corFaturado(totalPct))}>{totalPct.toFixed(0)}%</span>
+                  </div>
+                </div>
+              </dl>
+            </div>
+
+            {isAdmin && (
+              <Button variant="outline" size="sm" className="w-full" onClick={abrirEdicao}>
+                <Edit2 className="w-3.5 h-3.5" />Editar contrato
+              </Button>
+            )}
           </div>
         </Card>
 
-        {/* Saldos por veículo */}
+        {/* Saldos por veículo (direita, mais largo) */}
         <Card>
           <div className="p-5">
-            <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Saldos por veículo</p>
+            <p className="text-sm font-semibold text-ink-900 mb-3">Saldos por veículo</p>
             <div className="space-y-3">
               {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
                 const v = cmPorVeiculo[tipo];
@@ -224,7 +261,7 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                   return (
                     <div key={tipo} className={cn('rounded-lg border border-ink-200 p-3 opacity-50', meta.bg)}>
                       <div className="flex items-center gap-2">
-                        <span className={cn('w-7 h-7 rounded-md bg-white border border-ink-200 flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
+                        <span className={cn('inline-flex items-center justify-center min-w-14 h-7 px-2 rounded-md bg-white border border-ink-200 text-xs font-bold tracking-wider', meta.text)}>{meta.label}</span>
                         <span className="text-xs text-ink-400">não contratado</span>
                       </div>
                     </div>
@@ -234,8 +271,7 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                 return (
                   <div key={tipo} className={cn('rounded-lg border border-ink-200 p-3', meta.bg)}>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={cn('w-7 h-7 rounded-md bg-white flex items-center justify-center text-[10px] font-bold', meta.text)}>{meta.label}</span>
-                      <span className="text-sm font-bold text-ink-900">{meta.label}</span>
+                      <span className={cn('inline-flex items-center justify-center min-w-14 h-7 px-2 rounded-md bg-white text-xs font-bold tracking-wider', meta.text)}>{meta.label}</span>
                     </div>
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between"><span className="text-ink-600">Contratado</span><span className="font-mono font-semibold text-ink-900">{format.cm(v.cm_contratado)}</span></div>
@@ -253,61 +289,12 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                       href="#movimentacoes"
                       className="mt-2 inline-flex items-center justify-center gap-1 w-full text-xs text-brand-700 hover:text-brand-900 border border-brand-200 hover:border-brand-300 rounded-md py-1 transition-colors"
                     >
-                      Ver movimentações <span>→</span>
+                      Ver movimentações <ArrowRight className="w-3 h-3" />
                     </a>
                   </div>
                 );
               })}
             </div>
-          </div>
-        </Card>
-
-        {/* Informações do contrato */}
-        <Card>
-          <div className="p-5">
-            <p className="text-[10px] font-bold text-ink-500 uppercase tracking-widest mb-3">Informações do contrato</p>
-            <dl className="space-y-2 text-xs">
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Forma de faturamento</dt><dd className="text-ink-800">—</dd></div>
-              <div className="flex justify-between gap-3">
-                <dt className="text-ink-500">Veículos contratados</dt>
-                <dd className="flex items-center gap-1">
-                  {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
-                    const ativo = !!cmPorVeiculo[tipo];
-                    return (
-                      <span
-                        key={tipo}
-                        className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
-                          ativo
-                            ? (tipo === 'dou' ? 'bg-navy-100 text-navy-700' : tipo === 'doe' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')
-                            : 'bg-ink-100 text-ink-400 line-through'
-                        )}
-                      >
-                        {tipo}
-                      </span>
-                    );
-                  })}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Valor do centímetro</dt><dd className="font-semibold text-ink-900">{totalContratado > 0 ? format.brl(totalValorVenda / totalContratado) : '—'}</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Índice de reajuste</dt><dd className="text-ink-800">—</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">Contato responsável</dt><dd className="text-ink-800">—</dd></div>
-              <div className="flex justify-between gap-3"><dt className="text-ink-500">E-mail</dt><dd className="text-ink-800">—</dd></div>
-              <div className="pt-3 border-t border-ink-100">
-                <dt className="text-ink-500 mb-1">Uso total do contrato</dt>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-ink-100 rounded-pill overflow-hidden">
-                    <div className={cn('h-full', corBarra(totalPct))} style={{ width: `${Math.min(100, totalPct)}%` }} />
-                  </div>
-                  <span className={cn('text-xs font-bold', corFaturado(totalPct))}>{totalPct.toFixed(0)}%</span>
-                </div>
-              </div>
-            </dl>
-            {isAdmin && (
-              <Button variant="outline" size="sm" className="mt-4 w-full" onClick={abrirEdicao}>
-                <Edit2 className="w-3.5 h-3.5" />Editar contrato
-              </Button>
-            )}
           </div>
         </Card>
       </div>
