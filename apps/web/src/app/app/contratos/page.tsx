@@ -331,18 +331,29 @@ export default function ContratosPage() {
                           );
                         }
                         const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
+                        const corDisp = v.cm_disponivel <= 0 ? 'text-red-600' : pct >= 90 ? 'text-amber-600' : 'text-emerald-700';
                         return (
                           <TD key={tipo} colSpan={4} className="px-1">
-                            <div className="grid grid-cols-3 gap-0.5 text-[10px] font-mono">
-                              <div className="text-center"><span className="font-semibold text-ink-900">{format.cm(v.cm_contratado)}</span></div>
-                              <div className="text-center"><span className={cn('font-semibold', corFaturado(pct))}>{format.cm(v.cm_utilizado)}</span></div>
-                              <div className="text-center"><span className={cn('font-semibold', v.cm_disponivel <= 0 ? 'text-red-600' : 'text-emerald-700')}>{format.cm(v.cm_disponivel)}</span></div>
-                            </div>
-                            <div className="mt-1 flex items-center gap-1">
-                              <div className="flex-1 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
-                                <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
+                            <div className="grid grid-cols-4 gap-1">
+                              <div className="text-center">
+                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Contratado</div>
+                                <div className="font-mono text-[11px] font-semibold text-ink-900 mt-0.5">{format.cm(v.cm_contratado)}</div>
                               </div>
-                              <span className={cn('text-[9px] font-bold w-7 text-right tabular-nums', corFaturado(pct))}>{pct.toFixed(0)}%</span>
+                              <div className="text-center">
+                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Faturado</div>
+                                <div className="font-mono text-[11px] font-semibold text-ink-900 mt-0.5">{format.cm(v.cm_utilizado)}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Disponível</div>
+                                <div className={cn('font-mono text-[11px] font-semibold mt-0.5', corDisp)}>{format.cm(v.cm_disponivel)}</div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Utilizado</div>
+                                <div className={cn('font-mono text-[11px] font-semibold mt-0.5', corFaturado(pct))}>{pct.toFixed(0)}%</div>
+                                <div className="mt-1 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
+                                  <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
+                                </div>
+                              </div>
                             </div>
                           </TD>
                         );
