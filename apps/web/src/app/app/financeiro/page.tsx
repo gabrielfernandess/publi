@@ -73,8 +73,6 @@ export default function FinanceiroPage() {
   const [filtroPeriodo, setFiltroPeriodo] = useState<PeriodoTipo>('mes_atual');
   // hoje fica null no SSR; é setado no client via useEffect para evitar hydration mismatch
   const [hoje, setHoje] = useState<Date | null>(null);
-  const [filtroMes, setFiltroMes] = useState<number>(1);
-  const [filtroAno, setFiltroAno] = useState<number>(2025);
   const [filtroDataIni, setFiltroDataIni] = useState<string>('');
   const [filtroDataFim, setFiltroDataFim] = useState<string>('');
   const [filtroVeiculo, setFiltroVeiculo] = useState<string>('');
@@ -94,10 +92,7 @@ export default function FinanceiroPage() {
 
   // seta "hoje" só no client para evitar hydration mismatch
   useEffect(() => {
-    const agora = new Date();
-    setHoje(agora);
-    setFiltroMes(agora.getMonth() + 1);
-    setFiltroAno(agora.getFullYear());
+    setHoje(new Date());
   }, []);
 
   // ====== Período resolvido (data_inicio, data_fim, label) ======
@@ -134,15 +129,13 @@ export default function FinanceiroPage() {
     if (filtroPeriodo === 'ano_passado') {
       return { ini: new Date(y - 1, 0, 1), fim: new Date(y - 1, 11, 31), label: `${y - 1}` };
     }
-    // personalizado — usa mes/ano OU datas manuais
+    // personalizado — usa datas manuais
     if (filtroDataIni && filtroDataFim) {
       return { ini: new Date(filtroDataIni), fim: new Date(filtroDataFim), label: `${format.data(filtroDataIni)} ? ${format.data(filtroDataFim)}` };
     }
-    // fallback: usa filtroMes/filtroAno
-    const ini = new Date(filtroAno, filtroMes - 1, 1);
-    const fim = new Date(filtroAno, filtroMes, 0);
-    return { ini, fim, label: `${mesCurto(`${filtroAno}-${String(filtroMes).padStart(2, '0')}`)}` };
-  }, [hoje, filtroPeriodo, filtroMes, filtroAno, filtroDataIni, filtroDataFim]);
+    // fallback: ano corrente completo (1/jan a 31/dez)
+    return { ini: new Date(y, 0, 1), fim: new Date(y, 11, 31), label: `${y}` };
+  }, [hoje, filtroPeriodo, filtroDataIni, filtroDataFim]);
 
   const emPeriodo = (iso: string) => {
     if (!iso) return true;
@@ -249,13 +242,11 @@ export default function FinanceiroPage() {
   const totalRecebidoPeriodo = caixaMostrar.reduce((acc, m) => acc + (m.recebido || 0), 0);
   const taxaRecebimento = totalFaturadoPeriodo > 0 ? Math.round((totalRecebidoPeriodo / totalFaturadoPeriodo) * 100) : 0;
 
-  // ano de referência pros dropdowns (usa hoje se já foi setado no client, senão fallback)
-  const anoReferencia = hoje ? hoje.getFullYear() : filtroAno;
+  // ano de referência pra labels (usa hoje se já foi setado no client, senão o ano corrente do servidor)
+  const anoReferencia = hoje ? hoje.getFullYear() : new Date().getFullYear();
 
   const clearFiltros = () => {
     setFiltroPeriodo('mes_atual');
-    setFiltroMes(new Date().getMonth() + 1);
-    setFiltroAno(new Date().getFullYear());
     setFiltroDataIni('');
     setFiltroDataFim('');
     setFiltroVeiculo('');
@@ -275,64 +266,22 @@ export default function FinanceiroPage() {
       {/* ============ BARRA DE FILTROS ============ */}
       <Card className="mb-5">
         <div className="p-4 space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 flex gap-2">
-              <div className="flex items-center gap-2 flex-1">
-                <Calendar className="w-4 h-4 text-ink-500" />
-                <Select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value as PeriodoTipo)} className="flex-1">
-                  <option value="mes_atual">Mês atual</option>
-                  <option value="mes_anterior">Mês anterior</option>
-                  <option value="semana_atual">Semana atual</option>
-                  <option value="este_ano">Este ano</option>
-                  <option value="ano_passado">Ano passado</option>
-                  <option value="personalizado">Personalizado</option>
-                </Select>
-              </div>
-              {temFiltro && (
-                <Button variant="outline" size="sm" onClick={clearFiltros} className="border-ink-300">
-                  <X className="w-3.5 h-3.5" />Limpar
-                </Button>
-              )}
+          {/* Linha 1: Período + Veículo + Status NF + Cliente + Limpar (tudo horizontal) */}
+          <div className="flex flex-col lg:flex-row lg:items-end gap-3">
+            <div className="flex flex-col gap-1 lg:w-48">
+              <label className="text-xs font-medium text-ink-600 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5" />Período
+              </label>
+              <Select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value as PeriodoTipo)}>
+                <option value="mes_atual">Mês atual</option>
+                <option value="mes_anterior">Mês anterior</option>
+                <option value="semana_atual">Semana atual</option>
+                <option value="este_ano">Este ano</option>
+                <option value="ano_passado">Ano passado</option>
+                <option value="personalizado">Personalizado</option>
+              </Select>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-            {filtroPeriodo === 'personalizado' && (
-              <>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-ink-600">De</label>
-                  <Input type="date" value={filtroDataIni} onChange={(e) => setFiltroDataIni(e.target.value)} />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-ink-600">Até</label>
-                  <Input type="date" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
-                </div>
-              </>
-            )}
-            {filtroPeriodo === 'mes_atual' || filtroPeriodo === 'mes_anterior' ? (
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-ink-600">Mês/Ano</label>
-                <div className="flex gap-1">
-                  <Select value={filtroMes} onChange={(e) => setFiltroMes(Number(e.target.value))} className="flex-1">
-                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
-                      <option key={i + 1} value={i + 1}>{m.slice(0, 3)}</option>
-                    ))}
-                  </Select>
-                  <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))} className="w-20">
-                    {Array.from({ length: 5 }, (_, i) => anoReferencia - i).map((a) => <option key={a} value={a}>{a}</option>)}
-                  </Select>
-                </div>
-              </div>
-            ) : null}
-            {filtroPeriodo === 'este_ano' || filtroPeriodo === 'ano_passado' ? (
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-ink-600">Ano</label>
-                <Select value={filtroAno} onChange={(e) => setFiltroAno(Number(e.target.value))}>
-                  {Array.from({ length: 5 }, (_, i) => anoReferencia - i).map((a) => <option key={a} value={a}>{a}</option>)}
-                </Select>
-              </div>
-            ) : null}
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 lg:w-36">
               <label className="text-xs font-medium text-ink-600">Veículo</label>
               <Select value={filtroVeiculo} onChange={(e) => setFiltroVeiculo(e.target.value)}>
                 <option value="">Todos</option>
@@ -341,7 +290,7 @@ export default function FinanceiroPage() {
                 <option value="jornal">JORNAL</option>
               </Select>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 lg:w-40">
               <label className="text-xs font-medium text-ink-600">Status NF</label>
               <Select value={filtroStatusNF} onChange={(e) => setFiltroStatusNF(e.target.value)}>
                 <option value="">Todos</option>
@@ -351,14 +300,36 @@ export default function FinanceiroPage() {
                 <option value="cancelada">Cancelada</option>
               </Select>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1 lg:flex-1 min-w-0">
               <label className="text-xs font-medium text-ink-600">Cliente</label>
               <Select value={filtroCliente} onChange={(e) => setFiltroCliente(e.target.value)}>
                 <option value="">Todos</option>
                 {clientesUnicos.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
             </div>
+            {temFiltro && (
+              <div className="flex flex-col gap-1 lg:flex-none">
+                <label className="text-xs font-medium text-transparent select-none">.</label>
+                <Button variant="outline" size="sm" onClick={clearFiltros} className="border-ink-300">
+                  <X className="w-3.5 h-3.5" />Limpar
+                </Button>
+              </div>
+            )}
           </div>
+
+          {/* Linha 2 (condicional): De/Até só quando "Personalizado" */}
+          {filtroPeriodo === 'personalizado' && (
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 pt-1 border-t border-ink-100">
+              <div className="flex flex-col gap-1 sm:w-44">
+                <label className="text-xs font-medium text-ink-600">De</label>
+                <Input type="date" value={filtroDataIni} onChange={(e) => setFiltroDataIni(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1 sm:w-44">
+                <label className="text-xs font-medium text-ink-600">Até</label>
+                <Input type="date" value={filtroDataFim} onChange={(e) => setFiltroDataFim(e.target.value)} />
+              </div>
+            </div>
+          )}
 
           <div className="text-xs text-ink-500 flex items-center gap-2 pt-1 border-t border-ink-100">
             <Filter className="w-3 h-3" />
