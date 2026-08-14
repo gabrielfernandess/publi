@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Menu, X, Scale } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -33,14 +33,9 @@ export function LandingHeader() {
       )}
     >
       <div className="container-page flex items-center justify-between h-16 lg:h-20">
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center shadow-brand group-hover:scale-105 transition-transform">
-            <Scale className="w-5 h-5 text-brand-900" strokeWidth={2.5} />
-          </div>
-          <div className="leading-none">
-            <div className="text-white font-extrabold text-lg tracking-tight">Publi Legal</div>
-            <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
-          </div>
+        <Link href="/" className="flex items-center group">
+          <img src="/logo-mark-white.png" alt="Publi Legal" className="h-10 w-auto group-hover:opacity-90 transition-opacity" />
+          <span className="text-accent-300 text-xs uppercase tracking-widest font-semibold ml-2">Publicidade Legal</span>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">

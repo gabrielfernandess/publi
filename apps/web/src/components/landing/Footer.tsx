@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Scale } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -8,13 +7,8 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center">
-                <Scale className="w-5 h-5 text-brand-900" strokeWidth={2.5} />
-              </div>
-              <div className="leading-none">
-                <div className="font-sans font-extrabold text-lg">Publi Legal</div>
-                <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
-              </div>
+              <img src="/logo-mark-white.png" alt="Publi Legal" className="h-10 w-auto" />
+              <span className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</span>
             </div>
             <p className="mt-4 text-sm text-white/60 max-w-md leading-relaxed">
               Publicação de atos oficiais em DOU, DOE e Jornais de Grande Circulação. Atendemos prefeituras,

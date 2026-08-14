@@ -4,7 +4,7 @@ import { ReactNode, useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
-  LayoutDashboard, Users, Truck, FileText, Package2, LogOut, Menu, X, Scale, Receipt, BarChart3,
+  LayoutDashboard, Users, Truck, FileText, Package2, LogOut, Menu, X, Receipt, BarChart3,
   Bell, Search, Settings, User as UserIcon, ChevronDown, LogIn, AlertTriangle, CheckCircle2, Info, HelpCircle, ScrollText,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -101,14 +101,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         {/* Logo */}
         <div className="px-5 py-5 flex items-center justify-between">
-          <Link href="/app/dashboard" className="flex items-center gap-2.5 group" onClick={() => setOpenSidebar(false)}>
-            <div className="w-9 h-9 rounded-lg bg-lime-gradient flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-              <Scale className="w-4.5 h-4.5 text-brand-900" strokeWidth={2.5} />
-            </div>
-            <div className="leading-none">
-              <div className="font-serif font-extrabold text-white text-[15px] tracking-tight">Publi Legal</div>
-              <div className="text-[9px] text-lime-300 uppercase tracking-widest font-bold mt-0.5">Sistema</div>
-            </div>
+          <Link href="/app/dashboard" className="flex items-center group" onClick={() => setOpenSidebar(false)}>
+            <img src="/logo-mark-white.png" alt="Publi Legal" className="h-9 w-auto group-hover:opacity-90 transition-opacity" />
+            <span className="text-[9px] text-lime-300 uppercase tracking-widest font-bold ml-2">Sistema</span>
           </Link>
           <button onClick={() => setOpenSidebar(false)} className="lg:hidden text-white/70 hover:text-white p-1 -mr-1">
             <X className="w-5 h-5" />

@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Scale, Eye, EyeOff, LogIn, ArrowLeft, Mail, LifeBuoy, CheckCircle2, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, LogIn, ArrowLeft, Mail, LifeBuoy, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { AuthProvider, useAuth } from '@/lib/auth';
@@ -254,14 +254,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-ink-50">
       <div className="hidden lg:flex lg:w-1/2 bg-brand-900 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <Link href="/" className="flex items-center gap-2.5 group w-fit">
-            <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Scale className="w-5 h-5 text-brand-900" strokeWidth={2.5} />
-            </div>
-            <div className="leading-none">
-              <div className="font-sans font-extrabold text-lg">Publi Legal</div>
-              <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
-            </div>
+          <Link href="/" className="flex items-center group w-fit">
+            <img src="/logo-mark-white.png" alt="Publi Legal" className="h-11 w-auto group-hover:opacity-90 transition-opacity" />
+            <span className="text-accent-300 text-xs uppercase tracking-widest font-semibold ml-2">Publicidade Legal</span>
           </Link>
           <div>
             <h2 className="font-sans text-4xl font-extrabold text-balance text-accent-300">
@@ -286,13 +281,8 @@ export default function LoginPage() {
         <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-md">
             <div className="lg:hidden mb-8 flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center">
-                <Scale className="w-5 h-5 text-brand-900" strokeWidth={2.5} />
-              </div>
-              <div className="leading-none">
-                <div className="font-sans font-extrabold text-lg text-ink-900">Publi Legal</div>
-                <div className="text-brand-600 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
-              </div>
+              <img src="/logo-mark.png" alt="Publi Legal" className="h-10 w-auto" />
+              <span className="text-brand-600 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</span>
             </div>
 
             <h1 className="font-sans text-3xl font-extrabold text-ink-900">Acessar sistema</h1>
