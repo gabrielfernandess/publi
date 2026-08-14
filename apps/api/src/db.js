@@ -242,6 +242,14 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
   CREATE INDEX IF NOT EXISTS idx_audit_logs_entidade ON audit_logs(entidade, entidade_id);
   CREATE INDEX IF NOT EXISTS idx_audit_logs_acao ON audit_logs(acao);
+
+  -- Sprint 14c: configuracoes chave/valor
+  CREATE TABLE IF NOT EXISTS configuracoes (
+    chave TEXT PRIMARY KEY,
+    valor TEXT,                     -- JSON para tipos complexos; texto para tipos simples
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+  );
 `;
 
 // Migrations incrementais (idempotentes via try/catch em "duplicate column")
