@@ -279,9 +279,9 @@ export default function ContratosPage() {
                   <TH className="w-32">Município</TH>
                   <TH className="w-20">Contrato</TH>
                   <TH className="w-32">Vigência</TH>
-                  <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
+                  <TH className="text-center bg-ink-50/60" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.doe)} />DOE</span></TH>
-                  <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
+                  <TH className="text-center bg-ink-50/60" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
                   <TH className="w-20">Status</TH>
                   <TH className="w-6" />
                 </TR>
@@ -291,10 +291,10 @@ export default function ContratosPage() {
                   <TH />
                   {['dou', 'doe', 'jornal'].map((tipo) => (
                     <>
-                      <TH key={`${tipo}-c`} className="text-[10px] text-ink-500 font-medium text-center">Contratado</TH>
-                      <TH key={`${tipo}-f`} className="text-[10px] text-ink-500 font-medium text-center">Faturado</TH>
-                      <TH key={`${tipo}-d`} className="text-[10px] text-ink-500 font-medium text-center">Disponível</TH>
-                      <TH key={`${tipo}-u`} className="text-[10px] text-ink-500 font-medium text-center">Utilizado</TH>
+                      <TH key={`${tipo}-c`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Contratado</TH>
+                      <TH key={`${tipo}-f`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Faturado</TH>
+                      <TH key={`${tipo}-d`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Disponível</TH>
+                      <TH key={`${tipo}-u`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Utilizado</TH>
                     </>
                   ))}
                   <TH />
@@ -325,15 +325,16 @@ export default function ContratosPage() {
                       </TD>
                       {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
                         const v = c.cm_por_veiculo?.[tipo];
+                        const cellBg = tipo !== 'doe' ? 'bg-ink-50/60' : '';
                         if (!v) {
                           return (
-                            <TD key={tipo} colSpan={4} className="text-center text-ink-300 text-xs">—</TD>
+                            <TD key={tipo} colSpan={4} className={cn('text-center text-ink-300 text-xs', cellBg)}>—</TD>
                           );
                         }
                         const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
                         const corDisp = v.cm_disponivel <= 0 ? 'text-red-600' : pct >= 90 ? 'text-amber-600' : 'text-emerald-700';
                         return (
-                          <TD key={tipo} colSpan={4} className="px-1">
+                          <TD key={tipo} colSpan={4} className={cn('px-1', cellBg)}>
                             <div className="grid grid-cols-4 gap-1">
                               <div className="text-center">
                                 <div className="text-[9px] text-ink-500 uppercase tracking-wider">Contratado</div>
