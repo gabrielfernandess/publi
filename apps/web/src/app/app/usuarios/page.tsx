@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users as UsersIcon, Plus, Edit2, Trash2, AlertTriangle, Power, PowerOff, Mail, Shield } from 'lucide-react';
+import { Users as UsersIcon, Plus, Edit2, Trash2, AlertTriangle, Power, PowerOff, Mail, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth, useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -38,6 +38,8 @@ export default function UsuariosPage() {
   const [editing, setEditing] = useState<Usuario | null>(null);
   const [showDelete, setShowDelete] = useState<Usuario | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ tipo: 'ok' | 'erro'; msg: string } | null>(null);
 
   const carregar = async () => {
     setLoading(true);
@@ -49,6 +51,29 @@ export default function UsuariosPage() {
     }
   };
   useEffect(() => { if (isAdmin) carregar(); }, [isAdmin]);
+
+  const mostrarToast = (tipo: 'ok' | 'erro', msg: string) => {
+    setToast({ tipo, msg });
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const toggleAtivo = async (u: Usuario) => {
+    if (u.id === currentUser?.id) {
+      mostrarToast('erro', 'Voce nao pode desativar seu proprio usuario.');
+      return;
+    }
+    setTogglingId(u.id);
+    setErro(null);
+    try {
+      await api.patch(`/api/usuarios/${u.id}`, { ativo: !u.ativo });
+      await carregar();
+      mostrarToast('ok', u.ativo ? `${u.nome} foi desativado.` : `${u.nome} foi reativado.`);
+    } catch (err: any) {
+      mostrarToast('erro', err.message || 'Erro ao alterar status.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -76,6 +101,16 @@ export default function UsuariosPage() {
           </Button>
         }
       />
+
+      {toast && (
+        <div className={cn(
+          'mb-4 text-sm rounded-lg px-3 py-2 border flex items-center gap-2',
+          toast.tipo === 'ok' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-800 border-red-200'
+        )}>
+          {toast.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+          {toast.msg}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -129,10 +164,35 @@ export default function UsuariosPage() {
                           <Badge className={p.cor}>{p.label}</Badge>
                         </td>
                         <td className="px-4 py-3">
-                          {u.ativo ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><Power className="w-3 h-3" />Ativo</span>
+                          {u.id === currentUser?.id ? (
+                            u.ativo ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-emerald-700"><Power className="w-3 h-3" />Ativo</span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-ink-400"><PowerOff className="w-3 h-3" />Desativado</span>
+                            )
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-ink-400"><PowerOff className="w-3 h-3" />Desativado</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleAtivo(u)}
+                              disabled={togglingId === u.id}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-xs font-medium transition-colors',
+                                u.ativo
+                                  ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                                  : 'bg-ink-100 text-ink-500 hover:bg-ink-200',
+                                togglingId === u.id && 'opacity-60 cursor-wait'
+                              )}
+                              title={u.ativo ? 'Clique para desativar' : 'Clique para reativar'}
+                            >
+                              {togglingId === u.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : u.ativo ? (
+                                <Power className="w-3 h-3" />
+                              ) : (
+                                <PowerOff className="w-3 h-3" />
+                              )}
+                              {u.ativo ? 'Ativo' : 'Desativado'}
+                            </button>
                           )}
                         </td>
                         <td className="px-4 py-3 text-ink-500 text-xs">{format.data(u.created_at)}</td>
