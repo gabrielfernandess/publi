@@ -323,10 +323,10 @@ export default function ContratosPage() {
                 </TR>
               </THead>
               <TBody>
-                {filtered.map((c) => {
+                {filtered.map((c, idx) => {
                   const st = statusContrato(c);
                   return (
-                    <TR key={c.id} className="hover:bg-ink-50/40 transition-colors group">
+                    <TR key={c.id} className={cn('hover:bg-brand-50/40 transition-colors group', idx % 2 === 1 && 'bg-ink-50/60')}>
                       <TD>
                         <Link href={`/app/contratos/${c.id}`} className="block">
                           <div className="font-medium text-ink-900 text-xs whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
