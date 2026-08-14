@@ -12,7 +12,11 @@ export const format = {
   cm: (v: number | null | undefined) => (v == null || isNaN(v) ? '— cm' : `${fmtNum.format(v)} cm`),
   data: (iso: string | null | undefined) => {
     if (!iso) return '—';
-    const d = new Date(iso);
+    // DATE-only (YYYY-MM-DD sem hora) deve ser interpretado como LOCAL,
+    // não UTC. Senao "2026-08-14" vira 13/08 em timezones UTC- (ex: BRT).
+    // Adiciona T00:00:00 (sem Z) pra forcar interpretacao local.
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+    const d = new Date(isDateOnly ? `${iso}T00:00:00` : iso);
     return isNaN(d.getTime()) ? '—' : fmtData.format(d);
   },
   dataHora: (iso: string | null | undefined) => {

@@ -3,14 +3,17 @@
 import { use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Building2, MapPin, Calendar, FileText, Lock, History } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Building2, MapPin, Calendar, FileText, Lock, History, Trash2, AlertTriangle } from 'lucide-react';
 import { api } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
+import { useAuth, useIsAdmin } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { format, truncate } from '@/lib/format';
-import { STATUS_LIST, STATUS_BY_ID, canMoveFront } from '../constants';
+import { cn } from '@/lib/utils';
+import { STATUS_LIST, STATUS_BY_ID, TONE_CLASSES, canMoveFront } from '../constants';
 import { Stepper } from '../Stepper';
 import { EtapaTabs } from '../EtapaTabs';
 
@@ -24,6 +27,7 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const isAdmin = useIsAdmin();
   const pedidoId = Number(id);
   const etapaFromUrl = searchParams.get('etapa');
 
@@ -32,6 +36,9 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
   const [historico, setHistorico] = useState<any[]>([]);
   const [nfs, setNfs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -65,7 +72,7 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
         <h2 className="text-lg font-semibold text-ink-900">Pedido não encontrado</h2>
         <p className="text-sm text-ink-500 mt-2">Pode ter sido excluído ou você não tem acesso.</p>
         <Button onClick={() => router.push('/app/pedidos')} variant="outline" className="mt-4">
-          <ChevronLeft className="w-4 h-4" />Voltar pra Kanban
+          <ChevronLeft className="w-4 h-4" />Voltar ao Kanban
         </Button>
       </div>
     );
@@ -91,6 +98,18 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
     }
   };
 
+  const onExcluir = async () => {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await api.delete(`/api/pedidos/${pedidoId}`);
+      router.push('/app/pedidos');
+    } catch (err: any) {
+      setDeleteError(err.message || 'Erro ao excluir');
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Header do pedido */}
@@ -100,7 +119,11 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-3xl">{s?.emoji}</span>
+            {s && (
+              <span className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', TONE_CLASSES[s.tone])}>
+                <s.icon className="w-5 h-5" />
+              </span>
+            )}
             <h1 className="text-2xl font-bold text-ink-900">Pedido #{pedido.id}</h1>
             <Badge variant="default">{s?.label}</Badge>
           </div>
@@ -138,7 +161,12 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
               Avançar: {STATUS_LIST[idx + 1].label}<ChevronRight className="w-4 h-4" />
             </Button>
           )}
-          {!podeMover && !canGoPrev && !canGoNext && (
+          {isAdmin && (
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(true)} className="text-red-700 border-red-200 hover:bg-red-50 hover:border-red-300">
+              <Trash2 className="w-4 h-4" />Excluir
+            </Button>
+          )}
+          {!podeMover && !canGoPrev && !canGoNext && !isAdmin && (
             <span className="text-xs text-ink-500 flex items-center gap-1.5">
               <Lock className="w-3.5 h-3.5" />Seu papel não pode mover este pedido
             </span>
@@ -184,7 +212,14 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
             </div>
             <div className="p-3 max-h-[600px] overflow-y-auto space-y-2">
               {historico.length === 0 ? (
-                <div className="text-xs text-ink-500 text-center py-4">Nenhuma movimentação ainda.</div>
+                <div className="py-4">
+                  <EmptyState
+                    icon={<History className="w-8 h-8" />}
+                    title="Sem movimentações"
+                    description="As alterações de etapa aparecerão aqui."
+                    className="py-4"
+                  />
+                </div>
               ) : historico.map((h) => (
                 <div key={h.id} className="text-xs border border-ink-100 rounded-lg p-2.5 bg-ink-50/30">
                   <div className="flex items-center gap-1.5">
@@ -202,6 +237,43 @@ export default function PedidoPage({ params }: { params: Promise<{ id: string }>
           </Card>
         </aside>
       </div>
+
+      {/* Modal de confirmação de exclusão (somente admin) */}
+      <Modal
+        open={showDeleteConfirm}
+        onClose={() => !deleting && setShowDeleteConfirm(false)}
+        title="Excluir pedido"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>Cancelar</Button>
+            <Button variant="primary" onClick={onExcluir} loading={deleting} className="bg-red-600 hover:bg-red-700 text-white">
+              <Trash2 className="w-4 h-4" />Excluir permanentemente
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div className="flex items-start gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-red-800">
+              <p className="font-semibold">Esta ação não pode ser desfeita.</p>
+              <p className="mt-1">O pedido <strong>#{pedidoId}</strong> e todas as suas dependências (itens, boletos, histórico, arquivos) serão removidos permanentemente.</p>
+            </div>
+          </div>
+          {nfs.length > 0 && (
+            <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-amber-800">
+                Este pedido possui <strong>{nfs.length} NF(s) vinculada(s)</strong>. Cancele a(s) NF(s) antes de excluir o pedido.
+              </div>
+            </div>
+          )}
+          {deleteError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{deleteError}</div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 }

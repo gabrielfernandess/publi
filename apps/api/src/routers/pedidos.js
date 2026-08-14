@@ -195,9 +195,34 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  const exists = db.prepare('SELECT id FROM pedidos WHERE id = ?').get(req.params.id);
-  if (!exists) return res.status(404).json({ error: 'Pedido nao encontrado' });
-  db.prepare('DELETE FROM pedidos WHERE id = ?').run(req.params.id);
+  // Apenas admin pode excluir pedidos
+  if (req.user.papel !== 'admin') {
+    return res.status(403).json({ error: 'Apenas administradores podem excluir pedidos.' });
+  }
+  const id = req.params.id;
+  const ped = db.prepare('SELECT id, status FROM pedidos WHERE id = ?').get(id);
+  if (!ped) return res.status(404).json({ error: 'Pedido nao encontrado' });
+
+  // Bloqueia se houver NF vinculada (a tabela notas_fiscais NAO tem ON DELETE CASCADE)
+  const nfCount = db.prepare('SELECT COUNT(*) AS n FROM notas_fiscais WHERE pedido_id = ?').get(id).n;
+  if (nfCount > 0) {
+    return res.status(400).json({
+      error: `Nao e possivel excluir: este pedido possui ${nfCount} NF(s) vinculada(s). Cancele a(s) NF(s) antes.`,
+    });
+  }
+
+  // Apaga arquivos do disco antes do CASCADE remover os registros
+  const arqs = db.prepare('SELECT nome_arquivo FROM pedido_arquivos WHERE pedido_id = ?').all(id);
+  for (const a of arqs) {
+    const fp = path.join(uploadsDir, 'pedidos', a.nome_arquivo);
+    if (fs.existsSync(fp)) { try { fs.unlinkSync(fp); } catch {} }
+  }
+
+  // Audit log antes do CASCADE (pedido_historico tambem sera apagado)
+  console.log(`[audit] admin=${req.user.id} (${req.user.nome || ''}) excluiu pedido=${id} status=${ped.status}`);
+
+  // CASCADE apaga: pedido_itens, pedido_boletos, pedido_historico, pedido_arquivos
+  db.prepare('DELETE FROM pedidos WHERE id = ?').run(id);
   res.json({ ok: true });
 });
 
