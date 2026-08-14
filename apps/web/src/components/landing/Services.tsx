@@ -33,12 +33,11 @@ export function Services() {
     <section id="servicos" className="py-20 lg:py-28 bg-white">
       <div className="container-page">
         <div className="text-center max-w-2xl mx-auto">
-          <p className="text-sm font-bold text-brand-600 uppercase tracking-widest">Veículos</p>
-          <h2 className="mt-3 font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
+          <h2 className="font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
             Publicamos onde sua licitação precisa aparecer
           </h2>
           <p className="mt-5 text-lg text-ink-600">
-            DOU, DOE e os principais jornais de grande circulação. Você escolhe, a gente entrega.
+            DOU, DOE e os principais jornais de grande circulação. Você escolhe o veículo; cuidamos do envio.
           </p>
         </div>
 
@@ -46,7 +45,7 @@ export function Services() {
           {servicos.map((s) => (
             <Card key={s.titulo} className="group hover:shadow-lift transition-all">
               <CardHeader>
-                <div className={`w-12 h-12 rounded-xl ${s.cor} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                <div className={`w-12 h-12 rounded-xl ${s.cor} flex items-center justify-center mb-3`}>
                   <s.icon className="w-6 h-6" />
                 </div>
                 <CardTitle className="text-2xl font-sans">{s.titulo}</CardTitle>

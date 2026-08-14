@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use as usePromise } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, FileText, AlertTriangle, Edit2, Receipt, Building2, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, FileText, Edit2, Receipt, Building2, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -214,7 +214,7 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
                         <span
                           key={tipo}
                           className={cn(
-                            'inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider',
+                            'inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider',
                             ativo ? cn('bg-white border', meta.text, 'border-current') : 'bg-ink-100 text-ink-400 line-through'
                           )}
                         >
@@ -309,54 +309,58 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
             </h3>
             <p className="text-xs text-ink-500 mt-0.5">
               Baixas e estornos de centímetros por NF emitida
-              {movs && movs.length > 0 ? ` · ${movs.length} registro(s)` : ''}
+              {movs && movs.length > 0 ? ` · ${movs.length} ${movs.length === 1 ? 'registro' : 'registros'}` : ''}
             </p>
           </div>
         </div>
         {movs === null ? (
-          <div className="p-8 text-center text-sm text-ink-500">Carregando movimentações...</div>
-        ) : movs.length === 0 ? (
-          <div className="p-8 text-center text-sm text-ink-500">Nenhuma movimentação registrada neste contrato ainda.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-ink-50/70 border-b border-ink-100">
-                <tr>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Data</th>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Tipo</th>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Veículo</th>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Número/NF</th>
-                  <th className="text-right font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Centímetros</th>
-                  <th className="text-right font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Saldo após operação</th>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Usuário</th>
-                  <th className="text-left font-semibold text-ink-600 px-4 py-3 text-xs uppercase tracking-wider">Observações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-ink-100">
-                {movs.map((m, i) => {
-                  const isEstorno = m.cm > 0;
-                  return (
-                    <tr key={i} className="hover:bg-ink-50/40">
-                      <td className="px-4 py-2.5 text-ink-700 whitespace-nowrap text-xs">{format.data(m.data)}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={cn('inline-flex items-center px-2 py-0.5 rounded-pill text-[10px] font-semibold uppercase tracking-wider', isEstorno ? 'bg-red-100 text-red-700' : 'bg-brand-100 text-brand-700')}>
-                          {m.tipo}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-ink-700 text-xs uppercase">{m.veiculo_tipo}</td>
-                      <td className="px-4 py-2.5 font-mono text-ink-800 text-xs">NF {m.numero_nf}{isEstorno ? ' (Cancelada)' : ''}</td>
-                      <td className={cn('px-4 py-2.5 text-right font-mono font-semibold text-xs', isEstorno ? 'text-emerald-600' : 'text-red-600')}>
-                        {m.cm > 0 ? '+' : ''}{m.cm} cm
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-mono text-ink-700 text-xs">{format.cm(m.saldo_apos)}</td>
-                      <td className="px-4 py-2.5 text-ink-600 text-xs">{m.usuario_nome}</td>
-                      <td className="px-4 py-2.5 text-ink-500 italic text-xs">{m.observacoes || '—'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="p-5 space-y-3 animate-pulse">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-9 bg-ink-100 rounded" />
+            ))}
           </div>
+        ) : movs.length === 0 ? (
+          <EmptyState
+            icon={<Receipt className="w-10 h-10" />}
+            title="Nenhuma movimentação"
+            description="Baixas e estornos de centímetros por NF emitida aparecerão aqui."
+          />
+        ) : (
+          <Table>
+            <THead>
+              <TR>
+                <TH>Data</TH>
+                <TH>Tipo</TH>
+                <TH>Veículo</TH>
+                <TH>Número/NF</TH>
+                <TH className="text-right">Centímetros</TH>
+                <TH className="text-right">Saldo após operação</TH>
+                <TH>Usuário</TH>
+                <TH>Observações</TH>
+              </TR>
+            </THead>
+            <TBody>
+              {movs.map((m, i) => {
+                const isEstorno = m.cm > 0;
+                return (
+                  <TR key={i}>
+                    <TD className="whitespace-nowrap text-xs">{format.data(m.data)}</TD>
+                    <TD>
+                      <Badge variant={isEstorno ? 'danger' : 'brand'} className="text-xs">{m.tipo}</Badge>
+                    </TD>
+                    <TD className="text-xs uppercase">{m.veiculo_tipo}</TD>
+                    <TD className="font-mono text-xs">NF {m.numero_nf}{isEstorno ? ' (Cancelada)' : ''}</TD>
+                    <TD className={cn('text-right font-mono font-semibold text-xs', isEstorno ? 'text-emerald-600' : 'text-red-600')}>
+                      {m.cm > 0 ? '+' : ''}{m.cm} cm
+                    </TD>
+                    <TD className="text-right font-mono text-xs">{format.cm(m.saldo_apos)}</TD>
+                    <TD className="text-xs">{m.usuario_nome}</TD>
+                    <TD className="text-xs italic text-ink-500">{m.observacoes || '—'}</TD>
+                  </TR>
+                );
+              })}
+            </TBody>
+          </Table>
         )}
       </Card>
 
@@ -389,7 +393,7 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
             <Input label="Nº do processo" value={editForm.processo} onChange={(e) => setEditForm({ ...editForm, processo: e.target.value })} placeholder="091/2025" />
           </div>
           <p className="text-xs text-ink-500">
-            Os itens (veículos, centímetros, valores) não são editáveis aqui. Pra alterar isso, recrie o contrato.
+            Os itens (veículos, centímetros, valores) não são editáveis aqui. Para alterá-los, recrie o contrato.
           </p>
         </form>
       </Modal>

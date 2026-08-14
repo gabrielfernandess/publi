@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
-import { format } from '@/lib/format';
 
 type Cliente = {
   id: number;
@@ -167,9 +166,9 @@ export default function ClientesPage() {
         ) : data.length === 0 ? (
           <EmptyState
             icon={<Building2 className="w-12 h-12" />}
-            title="Nenhum cliente por aqui ainda"
+            title="Nenhum cliente cadastrado"
             description={isAdmin
-              ? "Bora começar? Cadastre o primeiro órgão (prefeitura, câmara, autarquia...) pra dar vida ao sistema."
+              ? "Cadastre o primeiro órgão público (prefeitura, câmara ou autarquia) para iniciar o atendimento."
               : "Quando um admin cadastrar o primeiro cliente, ele aparece aqui."}
             action={isAdmin
               ? <Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro cliente</Button>

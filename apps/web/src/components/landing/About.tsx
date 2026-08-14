@@ -1,4 +1,4 @@
-import { ShieldCheck, FileCheck2, Clock, HeartHandshake } from 'lucide-react';
+import { ShieldCheck, FileCheck2, Clock, Users } from 'lucide-react';
 
 const valores = [
   {
@@ -9,7 +9,7 @@ const valores = [
   {
     icon: Clock,
     title: 'Pontualidade',
-    text: 'Acompanhamos o timing certo de envio pra garantir que a publicação saia na data desejada.',
+    text: 'Acompanhamos o tempo certo de envio para garantir que a publicação saia na data desejada.',
   },
   {
     icon: FileCheck2,
@@ -17,9 +17,9 @@ const valores = [
     text: 'Cada ato é formatado conforme as exigências de cada veículo (DOU, DOE, Jornal).',
   },
   {
-    icon: HeartHandshake,
-    title: 'Atendimento humano',
-    text: 'Equipe dedicada pra entender a demanda do órgão e conduzir o processo até o fim.',
+    icon: Users,
+    title: 'Atendimento dedicado',
+    text: 'Equipe dedicada para entender a demanda do órgão e conduzir o processo até o fim.',
   },
 ];
 
@@ -28,9 +28,8 @@ export function About() {
     <section id="sobre" className="py-20 lg:py-28 bg-soft-gradient">
       <div className="container-page">
         <div className="max-w-3xl">
-          <p className="text-sm font-bold text-brand-600 uppercase tracking-widest">Sobre a Publi Legal</p>
-          <h2 className="mt-3 font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
-            A gente cuida da burocracia. <span className="text-brand-600">Você</span> cuida da sua cidade.
+          <h2 className="font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
+            Cuidamos da burocracia. <span className="text-brand-600">Você</span> cuida da sua cidade.
           </h2>
           <p className="mt-5 text-lg text-ink-600 text-balance">
             Somos a ponte entre o seu órgão e os veículos oficiais. Recebemos o ato, formatamos, enviamos, conferimos a publicação e arquivamos. Tudo rastreado.

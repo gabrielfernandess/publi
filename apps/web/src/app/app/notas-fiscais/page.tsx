@@ -43,7 +43,7 @@ type Kpis = {
 
 const STATUS_LABELS: Record<string, { label: string; corBg: string; corText: string }> = {
   em_aprovacao: { label: 'Em aprovação',  corBg: 'bg-amber-100',   corText: 'text-amber-800' },
-  aprovado:     { label: 'Aprovado',       corBg: 'bg-emerald-100', corText: 'text-emerald-800' },
+  aprovado:     { label: 'Aprovado',       corBg: 'bg-teal-100',    corText: 'text-teal-800' },
   nf_emitida:   { label: 'NF emitida',     corBg: 'bg-sky-100',     corText: 'text-sky-800' },
   em_cobranca:  { label: 'Em cobrança',    corBg: 'bg-indigo-100',  corText: 'text-indigo-800' },
   recebido:     { label: 'Recebido',       corBg: 'bg-emerald-100', corText: 'text-emerald-800' },
@@ -151,8 +151,8 @@ export default function FaturamentoPage() {
   return (
     <div>
       <PageHeader
-        title="MÓDULO 2 - FATURAMENTO E FINANCEIRO"
-        description="Painel de faturamento e acompanhamento financeiro"
+        title="Faturamento"
+        description="Faturamentos por cliente e período, com acompanhamento financeiro."
         actions={
           isAdmin ? (
             <>
@@ -171,7 +171,6 @@ export default function FaturamentoPage() {
         }
       />
 
-      {/* 6 KPIs - sem cor de fundo (estilo StatCard do /app/financeiro) */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-5">
         <StatCard
           icon={<Wallet className="w-5 h-5" />}
@@ -223,7 +222,7 @@ export default function FaturamentoPage() {
         />
       </div>
 
-      {/* Filtros (Print 1) */}
+      {/* Filtros */}
       <Card className="mb-5">
         <div className="p-4 flex flex-col lg:flex-row lg:items-end gap-3">
           <div className="flex flex-col gap-1">
@@ -289,7 +288,6 @@ export default function FaturamentoPage() {
         </div>
       </Card>
 
-      {/* Tabela de faturamentos (Print 1) */}
       <Card className="overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-sm text-ink-500">Carregando faturamentos...</div>
@@ -370,7 +368,7 @@ export default function FaturamentoPage() {
       >
         <div className="text-sm text-ink-600 space-y-3">
           <p>
-            Pra montar um faturamento novo, é preciso selecionar os pedidos do mesmo cliente/período/contrato
+            Para montar um faturamento novo, é preciso selecionar os pedidos do mesmo cliente/período/contrato
             e fechar o ciclo. Isso é feito na página do contrato.
           </p>
           <p className="text-xs text-ink-500">

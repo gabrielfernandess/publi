@@ -40,7 +40,7 @@ function LoginForm() {
       setRecuperarEnviado(true);
       if (resp?.devLink) setRecuperarDevLink(resp.devLink);
     } catch (err: any) {
-      setRecuperarErro(err?.message || 'Nao foi possivel solicitar a recuperacao.');
+      setRecuperarErro(err?.message || 'Não foi possível solicitar a recuperação.');
     } finally {
       setRecuperarEnviando(false);
     }
@@ -137,7 +137,7 @@ function LoginForm() {
           <div className="w-full border-t border-ink-100" />
         </div>
         <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-ink-400">suporte</span>
+          <span className="bg-white px-3 text-xs uppercase tracking-wider text-ink-400">suporte</span>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ function LoginForm() {
           <LifeBuoy className="w-4 h-4 text-brand-600" />
         </span>
         <span className="flex-1 min-w-0">
-          <span className="block text-sm font-medium text-ink-800">Problemas pra entrar?</span>
+          <span className="block text-sm font-medium text-ink-800">Problemas para entrar?</span>
           <span className="block text-xs text-ink-500 truncate">Fale com o suporte — {SUPORTE_EMAIL}</span>
         </span>
         <Mail className="w-4 h-4 text-ink-400 group-hover:text-brand-600" />
@@ -168,7 +168,7 @@ function LoginForm() {
           <div className="px-6 pt-5 pb-3 border-b border-ink-100">
             <h3 className="text-lg font-semibold text-ink-900">Recuperar acesso</h3>
             <p className="text-sm text-ink-500 mt-1">
-              Informe seu e-mail e enviaremos as instruções pra redefinir sua senha.
+              Informe seu e-mail e enviaremos as instruções para redefinir sua senha.
             </p>
           </div>
 
@@ -180,16 +180,16 @@ function LoginForm() {
                 </div>
                 <p className="mt-4 text-sm text-ink-800 font-medium">Se o e-mail estiver cadastrado, enviaremos um link</p>
                 <p className="mt-1 text-xs text-ink-500 max-w-xs mx-auto">
-                  O link expira em 1 hora. Confira tambem a caixa de spam.
+                  O link expira em 1 hora. Confira também a caixa de spam.
                 </p>
               </div>
-              {recuperarDevLink && (
+              {recuperarDevLink && process.env.NODE_ENV !== 'production' && (
                 <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-amber-700">
                     Modo dev — link direto
                   </p>
-                  <p className="mt-1 text-[11px] text-amber-700">
-                    Em desenvolvimento, exibimos o link em vez de enviar e-mail. Em producao, esta caixa some.
+                  <p className="mt-1 text-xs text-amber-700">
+                    Em desenvolvimento, exibimos o link em vez de enviar e-mail. Em produção, esta caixa some.
                   </p>
                   <a
                     href={recuperarDevLink}
@@ -197,7 +197,7 @@ function LoginForm() {
                     rel="noreferrer"
                     className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-amber-900 hover:text-amber-700 break-all"
                   >
-                    Abrir link de redefinicao
+                    Abrir link de redefinição
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                   </a>
                 </div>
@@ -230,7 +230,7 @@ function LoginForm() {
                 </div>
               )}
               <p className="text-xs text-ink-500">
-                Vamos enviar um link pra redefinir sua senha. O link expira em 1 hora.
+                Vamos enviar um link para redefinir sua senha. O link expira em 1 hora.
               </p>
               <div className="flex items-center justify-end gap-2">
                 <Button type="button" variant="ghost" size="md" rounded="md" onClick={() => setRecuperarOpen(false)}>
@@ -252,10 +252,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex bg-ink-50">
-      <div className="hidden lg:flex lg:w-1/2 bg-hero-gradient relative overflow-hidden">
-        <div className="absolute inset-0 grid-bg-dark opacity-50" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-accent-500/20 rounded-full blur-3xl" />
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-brand-500/30 rounded-full blur-3xl" />
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-900 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <Link href="/" className="flex items-center gap-2.5 group w-fit">
             <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -263,7 +260,7 @@ export default function LoginPage() {
             </div>
             <div className="leading-none">
               <div className="font-sans font-extrabold text-lg">Publi Legal</div>
-              <div className="text-accent-300 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+              <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
             </div>
           </Link>
           <div>
@@ -294,12 +291,12 @@ export default function LoginPage() {
               </div>
               <div className="leading-none">
                 <div className="font-sans font-extrabold text-lg text-ink-900">Publi Legal</div>
-                <div className="text-brand-600 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+                <div className="text-brand-600 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
               </div>
             </div>
 
             <h1 className="font-sans text-3xl font-extrabold text-ink-900">Acessar sistema</h1>
-            <p className="mt-2 text-sm text-ink-500">Use suas credenciais pra continuar.</p>
+            <p className="mt-2 text-sm text-ink-500">Use suas credenciais para continuar.</p>
 
             <div className="mt-8">
               <Suspense fallback={<div className="h-96 flex items-center justify-center text-ink-400 text-sm">Carregando...</div>}>

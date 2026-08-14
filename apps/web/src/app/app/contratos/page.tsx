@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search, FileText, Lock, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -12,9 +12,11 @@ import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Badge } from '@/components/ui/Badge';
 import { Table, THead, TBody, TR, TH, TD } from '@/components/ui/Table';
 import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { VEICULO_STYLE, corFaturado, corBarra } from './shared';
 
 type VeiculoResumo = { cm_contratado: number; cm_utilizado: number; cm_disponivel: number };
 type CmPorVeiculo = { dou?: VeiculoResumo; doe?: VeiculoResumo; jornal?: VeiculoResumo };
@@ -43,9 +45,9 @@ type Contrato = {
 };
 
 const VEICULO_DOT: Record<string, string> = {
-  dou: 'bg-navy-600',
-  doe: 'bg-emerald-600',
-  jornal: 'bg-amber-600',
+  dou: VEICULO_STYLE.dou.dot,
+  doe: VEICULO_STYLE.doe.dot,
+  jornal: VEICULO_STYLE.jornal.dot,
 };
 
 // Prioridade do status pra ordenação (menor = primeiro)
@@ -99,18 +101,6 @@ function statusContrato(c: Contrato): { label: string; cor: string } {
   const pct = c.cm_total_contratado > 0 ? (c.cm_total_utilizado / c.cm_total_contratado) * 100 : 0;
   if (pct >= 95) return { label: 'Atenção', cor: 'bg-amber-100 text-amber-700' };
   return { label: 'Vigente', cor: 'bg-emerald-100 text-emerald-700' };
-}
-
-function corFaturado(pct: number): string {
-  if (pct >= 90) return 'text-red-600';
-  if (pct >= 70) return 'text-amber-600';
-  return 'text-emerald-700';
-}
-
-function corBarra(pct: number): string {
-  if (pct >= 90) return 'bg-red-500';
-  if (pct >= 70) return 'bg-amber-500';
-  return 'bg-emerald-500';
 }
 
 export default function ContratosPage() {
@@ -339,7 +329,7 @@ export default function ContratosPage() {
             icon={<FileText className="w-12 h-12" />}
             title="Nenhum contrato por aqui"
             description={isAdmin
-              ? "Cada contrato amarra um cliente a um conjunto de veículos (DOU, DOE, jornal) com centímetro contratado. Cria o primeiro pra começar."
+              ? "Cada contrato vincula um cliente a um conjunto de veículos (DOU, DOE, jornal) com centímetro contratado. Crie o primeiro para começar."
               : "Quando um admin cadastrar o primeiro contrato, ele aparece aqui."}
             action={isAdmin
               ? <Button onClick={openNew}><Plus className="w-4 h-4" />Criar primeiro contrato</Button>
@@ -379,10 +369,10 @@ export default function ContratosPage() {
                   <TH />
                   {['dou', 'doe', 'jornal'].map((tipo) => (
                     <>
-                      <TH key={`${tipo}-c`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Contratado</TH>
-                      <TH key={`${tipo}-f`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Faturado</TH>
-                      <TH key={`${tipo}-d`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Disponível</TH>
-                      <TH key={`${tipo}-u`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Utilizado</TH>
+                      <TH key={`${tipo}-c`} className={cn('px-2 text-xs text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Contratado</TH>
+                      <TH key={`${tipo}-f`} className={cn('px-2 text-xs text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Faturado</TH>
+                      <TH key={`${tipo}-d`} className={cn('px-2 text-xs text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Disponível</TH>
+                      <TH key={`${tipo}-u`} className={cn('px-2 text-xs text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Utilizado</TH>
                     </>
                   ))}
                   <TH />
@@ -396,7 +386,7 @@ export default function ContratosPage() {
                     <TR key={c.id} className={cn('hover:bg-brand-50/40 transition-colors group', idx % 2 === 1 && 'bg-ink-100/50')}>
                       <TD>
                         <Link href={`/app/contratos/${c.id}`} className="block">
-                          <div className="font-medium text-ink-900 text-xs whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
+                          <div className="text-sm font-medium text-ink-900 whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
                         </Link>
                       </TD>
                       <TD>
@@ -406,7 +396,7 @@ export default function ContratosPage() {
                       </TD>
                       <TD>
                         <Link href={`/app/contratos/${c.id}`} className="block">
-                          <div className="text-[11px] text-ink-600 whitespace-nowrap leading-tight">
+                          <div className="text-xs text-ink-600 whitespace-nowrap leading-tight">
                             {format.data(c.data_inicio)}<br />
                             <span className="text-ink-400">a </span><strong className="text-ink-700">{format.data(c.data_fim)}</strong>
                           </div>
@@ -417,42 +407,35 @@ export default function ContratosPage() {
                         const cellBg = tipo !== 'doe' ? 'bg-ink-100/50' : '';
                         if (!v) {
                           return (
-                            <TD key={tipo} colSpan={4} className={cn('text-center text-ink-300 text-xs', cellBg)}>—</TD>
+                            <TD key={tipo} colSpan={4} className={cn('text-center text-ink-300 text-xs whitespace-nowrap', cellBg)}>—</TD>
                           );
                         }
                         const pct = v.cm_contratado > 0 ? (v.cm_utilizado / v.cm_contratado) * 100 : 0;
                         const corDisp = v.cm_disponivel <= 0 ? 'text-red-600' : pct >= 90 ? 'text-amber-600' : 'text-emerald-700';
+                        // 4 TDs alinhados 1:1 com os 4 THs do header — sem labels redundantes
                         return (
-                          <TD key={tipo} colSpan={4} className={cn('px-1', cellBg)}>
-                            <div className="grid grid-cols-4 gap-1">
-                              <div className="text-center">
-                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Contratado</div>
-                                <div className="font-mono text-[11px] font-semibold text-ink-900 mt-0.5">{format.cm(v.cm_contratado)}</div>
+                          <Fragment key={tipo}>
+                            <TD className={cn('px-2 text-center whitespace-nowrap', cellBg)}>
+                              <span className="font-mono text-xs font-semibold text-ink-900">{format.cm(v.cm_contratado)}</span>
+                            </TD>
+                            <TD className={cn('px-2 text-center whitespace-nowrap', cellBg)}>
+                              <span className="font-mono text-xs font-semibold text-ink-900">{format.cm(v.cm_utilizado)}</span>
+                            </TD>
+                            <TD className={cn('px-2 text-center whitespace-nowrap', cellBg)}>
+                              <span className={cn('font-mono text-xs font-semibold', corDisp)}>{format.cm(v.cm_disponivel)}</span>
+                            </TD>
+                            <TD className={cn('px-2 text-center', cellBg)}>
+                              <div className={cn('font-mono text-xs font-semibold whitespace-nowrap', corFaturado(pct))}>{pct.toFixed(0)}%</div>
+                              <div className="mt-1 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
+                                <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
                               </div>
-                              <div className="text-center">
-                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Faturado</div>
-                                <div className="font-mono text-[11px] font-semibold text-ink-900 mt-0.5">{format.cm(v.cm_utilizado)}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Disponível</div>
-                                <div className={cn('font-mono text-[11px] font-semibold mt-0.5', corDisp)}>{format.cm(v.cm_disponivel)}</div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-[9px] text-ink-500 uppercase tracking-wider">Utilizado</div>
-                                <div className={cn('font-mono text-[11px] font-semibold mt-0.5', corFaturado(pct))}>{pct.toFixed(0)}%</div>
-                                <div className="mt-1 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
-                                  <div className={cn('h-full', corBarra(pct))} style={{ width: `${Math.min(100, pct)}%` }} />
-                                </div>
-                              </div>
-                            </div>
-                          </TD>
+                            </TD>
+                          </Fragment>
                         );
                       })}
                       <TD>
                         <Link href={`/app/contratos/${c.id}`} className="block">
-                          <span className={cn('inline-flex items-center px-2 py-0.5 rounded-pill text-[9px] font-bold uppercase tracking-wider whitespace-nowrap', st.cor)}>
-                            {st.label}
-                          </span>
+                          <Badge className={st.cor}>{st.label}</Badge>
                         </Link>
                       </TD>
                       <TD>
@@ -623,7 +606,7 @@ export default function ContratosPage() {
                   <div className="text-2xl font-bold text-brand-800 mt-1">{format.brl(totalContratado)}</div>
                 </div>
                 <div className="text-right text-xs text-brand-600">
-                  {form.itens.length} item(ns) • {form.itens.reduce((acc, i) => acc + i.cm_contratado, 0).toFixed(0)} cm no total
+                  {form.itens.length} {form.itens.length === 1 ? 'item' : 'itens'} · {form.itens.reduce((acc, i) => acc + i.cm_contratado, 0).toFixed(0)} cm no total
                 </div>
               </div>
             </div>

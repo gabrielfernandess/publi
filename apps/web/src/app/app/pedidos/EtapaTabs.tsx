@@ -168,7 +168,9 @@ function AbaSolicitacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void
             </label>
           ))}
         </div>
-        <p className="text-xs text-ink-500 mt-1.5">⚠️ Cada pedido é de UM veículo (formato é diferente por veículo).</p>
+        <p className="text-xs text-ink-500 mt-1.5 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />Cada pedido é de UM veículo (formato é diferente por veículo).
+        </p>
       </div>
 
       <div>
@@ -183,7 +185,7 @@ function AbaSolicitacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void
       <div>
         <label className="text-xs font-semibold text-ink-700 mb-2 block">Arquivo da solicitação</label>
         <FileUpload pedidoId={pedido.id} categoria="solicitacao" onUploaded={() => onSaved?.()} />
-        <p className="text-xs text-ink-500 mt-2">📎 Importe o arquivo do Word ou PDF. Os dados são extraídos automaticamente na etapa "Em preparação".</p>
+        <p className="text-xs text-ink-500 mt-2">Importe o arquivo do Word ou PDF. Os dados são extraídos automaticamente na etapa "Em preparação".</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -240,7 +242,9 @@ function AbaPreparacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void 
             <h4 className="text-sm font-semibold text-ink-900">Processar arquivo automaticamente</h4>
             <p className="text-xs text-ink-600 mt-0.5">O sistema lê o arquivo Word/PDF, corrige ortografia, aplica formatação padrão e extrai dados (datas, CNPJ, valor, processo).</p>
             {pedido.processado_em && (
-              <p className="text-xs text-emerald-700 mt-1.5">✓ Processado em {new Date(pedido.processado_em).toLocaleString('pt-BR')} ({pedido.qtd_correcoes} correções)</p>
+              <p className="text-xs text-emerald-700 mt-1.5 flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />Processado em {new Date(pedido.processado_em).toLocaleString('pt-BR')} ({pedido.qtd_correcoes} correções)
+              </p>
             )}
             <div className="mt-3">
               <Button onClick={onProcessar} loading={processing} disabled={!pedido.arquivos_count} size="sm">
@@ -254,19 +258,19 @@ function AbaPreparacao({ pedido, onSaved }: { pedido: any; onSaved?: () => void 
           <div className="mt-4 space-y-2 border-t border-brand-200 pt-3">
             {procResult.correcoes > 0 && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs">
-                <div className="font-semibold text-amber-900">📝 {procResult.correcoes} correções aplicadas</div>
+                <div className="font-semibold text-amber-900">{procResult.correcoes} correções aplicadas</div>
                 <div className="text-amber-800 mt-1">Arquivo corrigido salvo: <span className="font-mono">{procResult.arquivo_corrigido || '—'}</span></div>
               </div>
             )}
             {procResult.dados_extraidos && Object.keys(procResult.dados_extraidos).length > 0 && (
               <div className="rounded-lg bg-white border border-ink-200 p-3 text-xs">
-                <div className="font-semibold text-ink-900 mb-1">📊 Dados extraídos:</div>
+                <div className="font-semibold text-ink-900 mb-1">Dados extraídos:</div>
                 <pre className="text-ink-700 font-mono text-[11px] overflow-x-auto">{JSON.stringify(procResult.dados_extraidos, null, 2)}</pre>
               </div>
             )}
             {procResult.preview && (
               <div className="rounded-lg bg-white border border-ink-200 p-3 text-xs">
-                <div className="font-semibold text-ink-900 mb-1">👀 Preview (antes → depois):</div>
+                <div className="font-semibold text-ink-900 mb-1">Preview (antes → depois):</div>
                 <div className="text-ink-500">Antes:</div>
                 <pre className="text-ink-700 bg-ink-50 rounded p-2 mt-1 whitespace-pre-wrap">{procResult.preview.antes}</pre>
                 <div className="text-ink-500 mt-2">Depois:</div>
@@ -491,7 +495,7 @@ function AbaPublicacaoRecebida({ pedido, onSaved }: { pedido: any; onSaved?: () 
         <Input label="Data do download do PDF" type="date" value={form.data_download_pdf} onChange={(e) => setForm({ ...form, data_download_pdf: e.target.value })} />
       </div>
       <Input label="Caminho do PDF da publicação" value={form.pdf_publicacao_path} onChange={(e) => setForm({ ...form, pdf_publicacao_path: e.target.value })} placeholder="C:\clientes\prefeitura-2026\publicacoes\edital-001.pdf" />
-      <p className="text-xs text-ink-500">📎 Upload do PDF será habilitado em sprint futura (hoje você cola o caminho do arquivo).</p>
+      <p className="text-xs text-ink-500">Upload do PDF será habilitado em sprint futura (hoje você cola o caminho do arquivo).</p>
       <SaveButton onClick={onSave} saving={saving} />
     </div>
   );
@@ -550,15 +554,15 @@ function AbaAprovacaoFaturamento({ pedido, papel, userId, onSaved }: { pedido: a
       <div className="grid sm:grid-cols-3 gap-3">
         <div className="rounded-lg bg-ink-50 p-3 text-xs">
           <div className="text-ink-500 uppercase tracking-wider">Saldo contratual</div>
-          <div className="text-lg font-bold text-ink-900 mt-1">ver contrato</div>
+          <div className="text-lg font-bold text-ink-900 mt-1">—</div>
         </div>
         <div className="rounded-lg bg-ink-50 p-3 text-xs">
           <div className="text-ink-500 uppercase tracking-wider">Vigência</div>
-          <div className="text-lg font-bold text-ink-900 mt-1">ver contrato</div>
+          <div className="text-lg font-bold text-ink-900 mt-1">—</div>
         </div>
         <div className="rounded-lg bg-ink-50 p-3 text-xs">
           <div className="text-ink-500 uppercase tracking-wider">Rentabilidade</div>
-          <div className="text-lg font-bold text-ink-900 mt-1">ver contrato</div>
+          <div className="text-lg font-bold text-ink-900 mt-1">—</div>
         </div>
       </div>
       <Input label="Centímetros faturáveis" type="number" step="0.01" value={cm || ''} onChange={(e) => setCm(Number(e.target.value))} />
@@ -589,7 +593,7 @@ function AbaAguardandoNF({ nfs }: { nfs: any[] }) {
       <AbaHeader icon={<Receipt className="w-4 h-4" />} title="Aguardando emissão da NF" desc="A NF é emitida pelo Conta Azul. Importe aqui assim que chegar." />
       {jaTem ? (
         <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-800">
-          Este pedido já tem {nfs.length} NF(s) vinculada(s). Você pode pular pra próxima etapa.
+          Este pedido já tem {nfs.length} NF vinculada. Você pode pular para a próxima etapa.
         </div>
       ) : (
         <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
@@ -597,7 +601,7 @@ function AbaAguardandoNF({ nfs }: { nfs: any[] }) {
           <ol className="text-xs space-y-1 list-decimal pl-4">
             <li>Emita a NF no Conta Azul normalmente.</li>
             <li>Vá em <a href="/app/notas-fiscais" className="underline font-semibold">Notas Fiscais</a> e importe a NF, vinculando a este pedido.</li>
-            <li>Volte aqui e avance pra próxima etapa.</li>
+            <li>Volte aqui e avance para a próxima etapa.</li>
           </ol>
         </div>
       )}

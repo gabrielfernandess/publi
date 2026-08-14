@@ -20,8 +20,8 @@ const variants: Record<Variant, string> = {
   outline: 'border border-ink-200 text-ink-700 hover:bg-ink-50 hover:border-ink-300',
   ghost: 'text-ink-700 hover:bg-ink-100',
   danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
-  lime: 'bg-lime-gradient text-brand-900 hover:opacity-95 shadow-brand font-bold uppercase tracking-wide',
-  limeOutline: 'border-2 border-accent-500 text-accent-700 hover:bg-accent-50 font-bold uppercase tracking-wide',
+  lime: 'bg-accent-500 text-white hover:bg-accent-600 active:bg-accent-700 shadow-soft',
+  limeOutline: 'border-2 border-accent-500 text-accent-700 hover:bg-accent-50',
 };
 
 const sizes: Record<Size, string> = {
@@ -33,7 +33,7 @@ const sizes: Record<Size, string> = {
 const roundedMap = { md: 'rounded-md', lg: 'rounded-lg', pill: 'rounded-pill' };
 
 export const Button = forwardRef<HTMLButtonElement, Props>(function Button(
-  { variant = 'primary', size = 'md', loading, fullWidth, rounded = 'pill', className, children, disabled, ...rest },
+  { variant = 'primary', size = 'md', loading, fullWidth, rounded = 'md', className, children, disabled, ...rest },
   ref
 ) {
   return (

@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardBody } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { User, Mail, Shield, Calendar } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const PAPEIS_LABEL: Record<string, { label: string; cor: string; descricao: string }> = {
@@ -30,14 +30,12 @@ export default function PerfilPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <Card>
           <CardBody className="p-6 text-center">
-            <div className="w-24 h-24 mx-auto rounded-pill bg-brand-gradient flex items-center justify-center text-white text-2xl font-bold shadow-lift">
+            <div className="w-24 h-24 mx-auto rounded-pill bg-brand-600 flex items-center justify-center text-white text-2xl font-bold shadow-soft">
               {iniciais}
             </div>
             <h2 className="mt-4 text-lg font-bold text-ink-900">{user.nome}</h2>
             <p className="text-sm text-ink-500 mt-1">{user.email}</p>
-            <span className={cn('inline-block mt-3 text-xs px-2.5 py-1 rounded-pill font-bold uppercase tracking-wider', papel.cor)}>
-              {papel.label}
-            </span>
+            <div className="mt-3"><Badge className={cn('text-xs', papel.cor)}>{papel.label}</Badge></div>
           </CardBody>
         </Card>
 
@@ -47,7 +45,7 @@ export default function PerfilPage() {
               <Shield className="w-4 h-4 text-brand-700" />
               O que você pode fazer
             </CardTitle>
-            <CardDescription>Seu papel define o que você vê e mexe no sistema.</CardDescription>
+            <CardDescription>Seu papel define o que você visualiza e altera no sistema.</CardDescription>
           </CardHeader>
           <CardBody>
             <p className="text-sm text-ink-700 leading-relaxed">{papel.descricao}</p>

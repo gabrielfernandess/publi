@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Modal } from '@/components/ui/Modal';
-import { format, truncate } from '@/lib/format';
+import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { STATUS_LIST, STATUS_BY_ID, TONE_CLASSES, canMoveFront } from '../constants';
 import { Stepper } from '../Stepper';

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Users, FileText, Package2, AlertTriangle, Wallet, TrendingUp, Building2, ArrowRight, Plus, Activity, Calendar,
+  Users, FileText, Package2, AlertTriangle, Wallet, TrendingUp, Building2, ArrowRight, Plus, Activity, Calendar, CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { format, diasAte } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import { STATUS_BY_ID, TONE_CLASSES } from '@/app/app/pedidos/constants';
 
 type Dashboard = {
   totais: {
@@ -26,22 +27,6 @@ type Dashboard = {
   top_contratos_saldo: any[];
   pedidos_por_status: Record<string, number>;
   pedidos_recentes: any[];
-};
-
-const STATUS_LABEL: Record<string, { label: string; emoji: string }> = {
-  solicitada: { label: 'Solicitada', emoji: '📥' },
-  em_preparacao: { label: 'Em preparação', emoji: '📋' },
-  aguardando_envio: { label: 'Aguardando envio', emoji: '⏳' },
-  enviada: { label: 'Enviada', emoji: '📤' },
-  cust_pgtos: { label: 'Custos op.', emoji: '💳' },
-  aguardando_publicacao: { label: 'Aguardando publ.', emoji: '📰' },
-  publicacao_recebida: { label: 'Publicação recebida', emoji: '📄' },
-  cliente_atendido: { label: 'Cliente atendido', emoji: '📲' },
-  aprovacao_faturamento: { label: 'Aprovação', emoji: '👩‍💼' },
-  aguardando_nf: { label: 'Aguardando NF', emoji: '🧾' },
-  nf_emitida: { label: 'NF emitida', emoji: '💰' },
-  aguardando_pagamento: { label: 'Aguardando pgto', emoji: '💵' },
-  recebido: { label: 'Recebido', emoji: '✅' },
 };
 
 export default function DashboardPage() {
@@ -84,11 +69,11 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold text-ink-900">
-            Olá, {primeiroNome} 👋
+            Olá, {primeiroNome}
           </h1>
           <p className="text-sm text-ink-500 mt-0.5">
             {temPedidoAndamento
-              ? `${t.pedidos_andamento} pedido(s) em andamento agora.`
+              ? `${t.pedidos_andamento} pedidos em andamento agora.`
               : 'Nenhum pedido em andamento no momento.'}
             {temAlerta && (
               <span className="text-amber-600 font-medium">
@@ -164,7 +149,7 @@ export default function DashboardPage() {
             {data.alertas_vigencia.length === 0 ? (
               <div className="px-5 py-8 text-center">
                 <div className="w-12 h-12 mx-auto rounded-pill bg-emerald-100 flex items-center justify-center mb-2">
-                  <span className="text-2xl">👍</span>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <p className="text-sm font-medium text-ink-700">Tudo certo por aqui</p>
                 <p className="text-xs text-ink-500 mt-1">Nenhum contrato precisa de atenção.</p>
@@ -232,7 +217,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="mt-2 h-1.5 bg-ink-100 rounded-pill overflow-hidden">
-                          <div className="h-full bg-brand-gradient transition-all" style={{ width: `${pct}%` }} />
+                          <div className="h-full bg-brand-500 transition-all" style={{ width: `${pct}%` }} />
                         </div>
                       </Link>
                     </li>
@@ -260,11 +245,13 @@ export default function DashboardPage() {
             ) : (
               <ul className="space-y-1.5">
                 {Object.entries(data.pedidos_por_status).map(([k, v]) => {
-                  const s = STATUS_LABEL[k];
+                  const s = STATUS_BY_ID[k];
                   return (
                     <li key={k} className="flex items-center justify-between text-sm py-1">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-base">{s?.emoji || '•'}</span>
+                        <span className={cn('w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0', s ? TONE_CLASSES[s.tone] : 'bg-ink-100 text-ink-500')}>
+                          {s && <s.icon className="w-3.5 h-3.5" />}
+                        </span>
                         <span className="text-ink-700 truncate">{s?.label || k}</span>
                       </div>
                       <span className="font-semibold text-ink-900 ml-2">{v}</span>
@@ -300,10 +287,13 @@ export default function DashboardPage() {
             ) : (
               <ul className="divide-y divide-ink-100">
                 {data.pedidos_recentes.map((p: any) => {
-                  const s = STATUS_LABEL[p.status];
+                  const s = STATUS_BY_ID[p.status];
+                  const StatusIcon = s?.icon;
                   return (
                     <li key={p.id} className="px-5 py-3 flex items-center gap-3 hover:bg-ink-50/40 transition-colors">
-                      <div className="text-2xl flex-shrink-0">{s?.emoji || '•'}</div>
+                      <span className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', s ? TONE_CLASSES[s.tone] : 'bg-ink-100 text-ink-500')}>
+                        {StatusIcon && <StatusIcon className="w-4 h-4" />}
+                      </span>
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-ink-900 truncate">{p.cliente_nome}</div>
                         <div className="text-xs text-ink-500 mt-0.5 capitalize">

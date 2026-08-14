@@ -43,7 +43,7 @@ export function Stepper({ currentId, onSelect }: Props) {
                 isNext && 'bg-brand-100 text-brand-700 ring-1 ring-brand-300',
                 isLocked && 'bg-ink-100 text-ink-400',
               )}>
-                {isLocked ? <Lock className="w-3 h-3" /> : isPast ? <Check className="w-3 h-3" /> : s.emoji}
+                {isLocked ? <Lock className="w-3 h-3" /> : isPast ? <Check className="w-3 h-3" /> : <s.icon className="w-3 h-3" />}
               </span>
               <span className="hidden md:inline">{s.label}</span>
             </button>

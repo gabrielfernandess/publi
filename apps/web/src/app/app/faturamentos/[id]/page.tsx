@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Edit2, Trash2, Printer, History, FileText, ChevronDown, AlertTriangle, CheckCircle2, Eye, Lock } from 'lucide-react';
+import { ArrowLeft, Check, Trash2, Printer, FileText, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -44,10 +44,10 @@ type FaturamentoDetalhe = {
 
 const STATUS_LABELS: Record<string, { label: string; corBg: string; corText: string; step: number }> = {
   em_aprovacao: { label: 'Em aprovação',  corBg: 'bg-amber-100',   corText: 'text-amber-800',   step: 1 },
-  aprovado:     { label: 'Aprovado',       corBg: 'bg-emerald-100', corText: 'text-emerald-800', step: 1 },
+  aprovado:     { label: 'Aprovado',       corBg: 'bg-teal-100',    corText: 'text-teal-800',    step: 2 },
   nf_emitida:   { label: 'NF emitida',     corBg: 'bg-sky-100',     corText: 'text-sky-800',     step: 3 },
-  em_cobranca:  { label: 'Em cobrança',    corBg: 'bg-indigo-100',  corText: 'text-indigo-800',  step: 4 },
-  recebido:     { label: 'Recebido',       corBg: 'bg-emerald-100', corText: 'text-emerald-800', step: 5 },
+  em_cobranca:  { label: 'Em cobrança',    corBg: 'bg-indigo-100',  corText: 'text-indigo-800',  step: 3 },
+  recebido:     { label: 'Recebido',       corBg: 'bg-emerald-100', corText: 'text-emerald-800', step: 4 },
   cancelado:    { label: 'Cancelado',      corBg: 'bg-red-100',     corText: 'text-red-800',     step: 0 },
 };
 
@@ -110,9 +110,9 @@ export default function FaturamentoDetalhePage() {
   if (!data) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-ink-500">Faturamento nao encontrado.</p>
+        <p className="text-sm text-ink-500">Faturamento não encontrado.</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/app/notas-fiscais')}>
-          <ArrowLeft className="w-4 h-4" />Voltar pra Faturamento
+          <ArrowLeft className="w-4 h-4" />Voltar ao Faturamento
         </Button>
       </div>
     );
@@ -125,7 +125,7 @@ export default function FaturamentoDetalhePage() {
     <div>
       <div className="mb-4">
         <Link href="/app/notas-fiscais" className="inline-flex items-center gap-1.5 text-sm text-ink-600 hover:text-ink-900">
-          <ArrowLeft className="w-4 h-4" />Voltar pra Faturamento
+          <ArrowLeft className="w-4 h-4" />Voltar ao Faturamento
         </Link>
       </div>
 
@@ -213,7 +213,7 @@ export default function FaturamentoDetalhePage() {
                     </tr>
                   );
                 })}
-                <tr className="bg-amber-50 font-bold">
+                <tr className="bg-ink-50/70 font-bold">
                   <td className="py-1.5 text-ink-800 uppercase">Total</td>
                   <td className="py-1.5 text-right font-mono text-ink-900">{data.cm_total} cm</td>
                   <td className="py-1.5 text-right font-mono text-ink-900">{format.brl(data.valor_total)}</td>
@@ -258,28 +258,19 @@ export default function FaturamentoDetalhePage() {
           <Button variant="primary" size="sm" rounded="md" disabled={data.status !== 'em_aprovacao' || acting} loading={acting} onClick={aprovar}>
             <Check className="w-3.5 h-3.5" />Aprovar faturamento
           </Button>
-          <Button variant="outline" size="sm" rounded="md" disabled>
-            <Edit2 className="w-3.5 h-3.5" />Editar seleções
-            <span className="ml-1 text-[10px] text-ink-400">(em breve)</span>
-          </Button>
           <Button variant="outline" size="sm" rounded="md" disabled={acting} onClick={() => setShowExcluir(true)}>
             <Trash2 className="w-3.5 h-3.5" />Excluir faturamento
           </Button>
           <Button variant="outline" size="sm" rounded="md" onClick={imprimir}>
             <Printer className="w-3.5 h-3.5" />Imprimir resumo
           </Button>
-          <Button variant="outline" size="sm" rounded="md" disabled>
-            <History className="w-3.5 h-3.5" />Histórico / Observações
-            <span className="ml-1 text-[10px] text-ink-400">(em breve)</span>
-          </Button>
         </div>
       )}
 
       <Card>
         <div className="p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3">
             <h3 className="text-sm font-bold text-ink-900">Publicações incluídas neste faturamento</h3>
-            <button className="text-[10px] text-brand-600 hover:underline font-medium">Visualizar por veículo</button>
           </div>
           {data.publicacoes.length === 0 ? (
             <div className="py-8 text-center text-xs text-ink-500">Nenhuma publicação vinculada.</div>
@@ -337,11 +328,9 @@ export default function FaturamentoDetalhePage() {
 function FaturamentoStepper({ status, dataAprovacao, dataEmissao, dataPagamento, numeroNf }: { status: string; dataAprovacao: string | null; dataEmissao: string | null; dataPagamento: string | null; numeroNf: string | null }) {
   const isCancelado = status === 'cancelado';
   const etapas = [
-    { num: 1, label: 'Aprovação',      sub: dataAprovacao ? `Aprovado em ${format.data(dataAprovacao)}` : 'Em aprovação', done: !!dataAprovacao, current: !dataAprovacao && !isCancelado },
-    { num: 2, label: 'Emissão da NF',  sub: dataEmissao ? 'NF emitida' : 'Aguardando',      done: !!dataEmissao,   current: !!dataAprovacao && !dataEmissao },
-    { num: 3, label: 'NF Emitida',     sub: numeroNf || (dataEmissao ? 'Emitida' : 'Pendente'), done: !!dataEmissao, current: !!dataAprovacao && !dataEmissao },
-    { num: 4, label: 'Pagamento',     sub: dataPagamento ? 'Pago' : 'Em cobrança',     done: !!dataPagamento, current: !!dataEmissao && !dataPagamento },
-    { num: 5, label: 'Recebimento',   sub: dataPagamento ? format.data(dataPagamento) : 'Aguardando', done: !!dataPagamento, current: !!dataEmissao && !dataPagamento },
+    { num: 1, label: 'Aprovação',     sub: dataAprovacao ? `Aprovado em ${format.data(dataAprovacao)}` : 'Em aprovação', done: !!dataAprovacao, current: !dataAprovacao && !isCancelado },
+    { num: 2, label: 'Emissão da NF', sub: numeroNf || (dataEmissao ? 'Emitida' : 'Aguardando'),                         done: !!dataEmissao,   current: !!dataAprovacao && !dataEmissao },
+    { num: 3, label: 'Pagamento',     sub: dataPagamento ? `Recebido em ${format.data(dataPagamento)}` : 'Em cobrança',   done: !!dataPagamento, current: !!dataEmissao && !dataPagamento },
   ];
 
   return (

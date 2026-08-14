@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Mail, Phone, MapPin, Send, Check } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Check, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 
@@ -14,12 +14,11 @@ export function CTA() {
       <div className="container-page">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
           <div>
-            <p className="text-sm font-bold text-brand-600 uppercase tracking-widest">Fale com a gente</p>
-            <h2 className="mt-3 font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
-              Tem uma licitação pra publicar? Conta pra gente.
+            <h2 className="font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
+              Tem uma licitação para publicar? Fale conosco.
             </h2>
             <p className="mt-5 text-lg text-ink-600 text-balance">
-              Manda mensagem ou e-mail. Respondemos em até 1 dia útil com prazo, custo e plano de publicação.
+              Envie mensagem ou e-mail. Respondemos em até 1 dia útil com prazo, custo e plano de publicação.
             </p>
 
             <div className="mt-10 space-y-4">
@@ -54,10 +53,13 @@ export function CTA() {
 
             <div className="mt-10 p-5 rounded-xl bg-accent-50 border border-accent-200">
               <p className="text-sm text-ink-700 leading-relaxed">
-                <strong className="text-accent-700">Já é cliente?</strong> Entra no sistema pra ver seus pedidos, saldos e NFs em aberto.
+                <strong className="text-accent-700">Já é cliente?</strong> Entre no sistema para ver seus pedidos, saldos e NFs em aberto.
               </p>
               <Link href="/login" className="mt-3 inline-block">
-                <Button variant="lime" size="sm" rounded="md">Entrar no sistema →</Button>
+                <Button variant="lime" size="sm" rounded="md">
+                  Entrar no sistema
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
               </Link>
             </div>
           </div>
@@ -72,7 +74,7 @@ export function CTA() {
                   <Check className="w-8 h-8" />
                 </div>
                 <h3 className="mt-5 text-xl font-semibold text-ink-900">Mensagem enviada!</h3>
-                <p className="mt-2 text-sm text-ink-600">A gente te responde em até 1 dia útil.</p>
+                <p className="mt-2 text-sm text-ink-600">Respondemos em até 1 dia útil.</p>
                 <button
                   type="button"
                   onClick={() => setEnviado(false)}

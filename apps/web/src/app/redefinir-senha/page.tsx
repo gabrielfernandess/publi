@@ -30,7 +30,7 @@ function RedefinirForm() {
     let cancelado = false;
     if (!token) {
       setStatus('invalid');
-      setMotivo('Link invalido — token ausente.');
+      setMotivo('Link inválido — token ausente.');
       return;
     }
     api
@@ -42,13 +42,13 @@ function RedefinirForm() {
           setEmail(resp.email || '');
         } else {
           setStatus('invalid');
-          setMotivo(resp.error || 'Link invalido.');
+          setMotivo(resp.error || 'Link inválido.');
         }
       })
       .catch((err) => {
         if (cancelado) return;
         setStatus('invalid');
-        setMotivo(err?.message || 'Nao foi possivel validar o link.');
+        setMotivo(err?.message || 'Não foi possível validar o link.');
       });
     return () => { cancelado = true; };
   }, [token]);
@@ -57,7 +57,7 @@ function RedefinirForm() {
     e.preventDefault();
     setErro(null);
     if (senha !== confirmar) {
-      setErro('As senhas nao conferem.');
+      setErro('As senhas não conferem.');
       return;
     }
     setSubmitting(true);
@@ -86,11 +86,11 @@ function RedefinirForm() {
           <div className="w-12 h-12 rounded-full bg-red-50 mx-auto flex items-center justify-center">
             <AlertTriangle className="w-6 h-6 text-red-600" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-ink-900 text-center">Link nao pode ser usado</h2>
+          <h2 className="mt-4 text-lg font-semibold text-ink-900 text-center">Link não pode ser usado</h2>
           <p className="mt-2 text-sm text-ink-500 text-center">{motivo}</p>
           <div className="mt-6 flex flex-col gap-2">
             <Link href="/login" className="w-full">
-              <Button variant="primary" size="lg" fullWidth rounded="md">Voltar pro login</Button>
+              <Button variant="primary" size="lg" fullWidth rounded="md">Voltar para o login</Button>
             </Link>
             <Link href="/login" className="w-full">
               <Button variant="ghost" size="md" fullWidth rounded="md">Solicitar um novo link</Button>
@@ -105,7 +105,7 @@ function RedefinirForm() {
             <ShieldCheck className="w-4 h-4 text-brand-700 mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-medium text-ink-800">Definindo senha para {email}</p>
-              <p className="text-xs text-ink-600">Use no minimo 6 caracteres.</p>
+              <p className="text-xs text-ink-600">Use no mínimo 6 caracteres.</p>
             </div>
           </div>
 
@@ -163,7 +163,7 @@ function RedefinirForm() {
             <CheckCircle2 className="w-6 h-6 text-brand-600" />
           </div>
           <h2 className="mt-4 text-lg font-semibold text-ink-900">Senha redefinida</h2>
-          <p className="mt-2 text-sm text-ink-500">Tudo certo. Voce sera redirecionado pro login em instantes.</p>
+          <p className="mt-2 text-sm text-ink-500">Tudo certo. Você será redirecionado para o login em instantes.</p>
         </div>
       )}
     </div>
@@ -173,10 +173,7 @@ function RedefinirForm() {
 export default function RedefinirSenhaPage() {
   return (
     <div className="min-h-screen flex bg-ink-50">
-      <div className="hidden lg:flex lg:w-1/2 bg-hero-gradient relative overflow-hidden">
-        <div className="absolute inset-0 grid-bg-dark opacity-50" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-accent-500/20 rounded-full blur-3xl" />
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-brand-500/30 rounded-full blur-3xl" />
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-900 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <Link href="/" className="flex items-center gap-2.5 group w-fit">
             <div className="w-10 h-10 rounded-lg bg-lime-gradient flex items-center justify-center group-hover:scale-105 transition-transform">
@@ -184,7 +181,7 @@ export default function RedefinirSenhaPage() {
             </div>
             <div className="leading-none">
               <div className="font-sans font-extrabold text-lg">Publi Legal</div>
-              <div className="text-accent-300 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+              <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
             </div>
           </Link>
           <div>
@@ -192,7 +189,7 @@ export default function RedefinirSenhaPage() {
               Defina uma nova senha.
             </h2>
             <p className="mt-4 text-white/80 text-balance max-w-md">
-              Use algo que voce consiga lembrar — mas que nao seja facil de adivinhar. Sua conta volta a funcionar na hora.
+              Use algo que você consiga lembrar — mas que não seja fácil de adivinhar. Sua conta volta a funcionar na hora.
             </p>
           </div>
           <p className="text-xs text-white/40">© {new Date().getFullYear()} Publi Legal</p>
@@ -203,7 +200,7 @@ export default function RedefinirSenhaPage() {
         <div className="p-6">
           <Link href="/login" className="inline-flex items-center gap-2 text-sm text-ink-500 hover:text-ink-800 transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Voltar pro login
+            Voltar para o login
           </Link>
         </div>
 
@@ -215,12 +212,12 @@ export default function RedefinirSenhaPage() {
               </div>
               <div className="leading-none">
                 <div className="font-sans font-extrabold text-lg text-ink-900">Publi Legal</div>
-                <div className="text-brand-600 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+                <div className="text-brand-600 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
               </div>
             </div>
 
             <h1 className="font-sans text-3xl font-extrabold text-ink-900">Redefinir senha</h1>
-            <p className="mt-2 text-sm text-ink-500">Crie uma nova senha pra sua conta.</p>
+            <p className="mt-2 text-sm text-ink-500">Crie uma nova senha para sua conta.</p>
 
             <div className="mt-8">
               <Suspense fallback={<div className="h-96 flex items-center justify-center text-ink-400 text-sm">Carregando...</div>}>

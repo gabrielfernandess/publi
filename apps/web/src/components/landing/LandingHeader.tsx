@@ -39,7 +39,7 @@ export function LandingHeader() {
           </div>
           <div className="leading-none">
             <div className="text-white font-extrabold text-lg tracking-tight">Publi Legal</div>
-            <div className="text-accent-300 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+            <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
           </div>
         </Link>
 

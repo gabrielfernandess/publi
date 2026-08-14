@@ -7,7 +7,7 @@ import {
   type DragStartEvent, type DragEndEvent, type DragCancelEvent,
   useDraggable, useDroppable,
 } from '@dnd-kit/core';
-import { Plus, MoreVertical, Building2, FileText, Truck, Lock, Search, X, GripVertical } from 'lucide-react';
+import { Plus, MoreVertical, Building2, Truck, Lock, Search, X, GripVertical } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -16,11 +16,12 @@ import { Input, Textarea } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Card } from '@/components/ui/Card';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { format, truncate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { STATUS_LIST, STATUS_BY_ID, canMoveFront } from './constants';
+import { STATUS_LIST, STATUS_BY_ID, TONE_CLASSES, canMoveFront } from './constants';
 
-type Coluna = { id: string; label: string; emoji: string; cor: string; pedidos: any[] };
+type Coluna = { id: string; label: string; pedidos: any[] };
 
 type Pedido = {
   id: number;
@@ -140,8 +141,8 @@ export default function PedidosPage() {
       <PageHeader
         title="Pedidos"
         description={searchFromUrl
-          ? `${filtered.length} resultado(s) pra "${searchFromUrl}"`
-          : "Kanban operacional — arraste os cards entre as colunas pra mudar o status"}
+          ? `${filtered.length} resultados para "${searchFromUrl}"`
+          : "Kanban operacional — arraste os cards entre as colunas para mudar o status"}
         actions={
           <div className="flex items-center gap-2">
             {searchFromUrl && (
@@ -159,20 +160,20 @@ export default function PedidosPage() {
       {deny && (
         <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 flex items-center gap-2">
           <Lock className="w-4 h-4" />
-          Voce nao pode mover pra <strong className="font-semibold">{deny}</strong> (limite do seu papel ou do fluxo).
+          Você não pode mover para <strong className="font-semibold">{deny}</strong> (limite do seu papel ou do fluxo).
         </div>
       )}
 
       {loading ? (
         <div className="text-sm text-ink-500 py-8 text-center">Carregando kanban...</div>
       ) : filtered.length === 0 && searchFromUrl ? (
-        <Card className="p-8 text-center">
-          <Search className="w-10 h-10 mx-auto text-ink-300" />
-          <p className="mt-3 text-sm font-semibold text-ink-900">Nenhum pedido encontrado</p>
-          <p className="text-xs text-ink-500 mt-1">Tente outro termo ou veja todos os pedidos.</p>
-          <Button variant="outline" onClick={() => router.push('/app/pedidos')} className="mt-4">
-            Ver todos os pedidos
-          </Button>
+        <Card>
+          <EmptyState
+            icon={<Search className="w-10 h-10" />}
+            title="Nenhum pedido encontrado"
+            description="Tente outro termo ou veja todos os pedidos."
+            action={<Button variant="outline" onClick={() => router.push('/app/pedidos')}>Ver todos os pedidos</Button>}
+          />
         </Card>
       ) : (
         <DndContext
@@ -232,13 +233,13 @@ function KanbanColumn({
 }) {
   const { setNodeRef, isOver: isOverDnd } = useDroppable({ id: coluna.id });
   const highlighted = isOver || (isOverDnd && !isActiveFromHere);
+  const meta = STATUS_BY_ID[coluna.id];
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'flex-shrink-0 w-72 rounded-xl border-t-4 snap-start transition-all duration-150',
-        coluna.cor,
+        'flex-shrink-0 w-72 rounded-xl snap-start transition-all duration-150',
         highlighted
           ? 'bg-brand-50 ring-2 ring-brand-300 ring-offset-1'
           : 'bg-ink-50',
@@ -249,7 +250,11 @@ function KanbanColumn({
         highlighted ? 'bg-brand-50' : 'bg-ink-50',
       )}>
         <div className="flex items-center gap-2">
-          <span className="text-base">{coluna.emoji}</span>
+          {meta && (
+            <span className={cn('w-6 h-6 rounded-md flex items-center justify-center', TONE_CLASSES[meta.tone])}>
+              <meta.icon className="w-3.5 h-3.5" />
+            </span>
+          )}
           <span className="text-xs font-semibold text-ink-800 uppercase tracking-wider">{coluna.label}</span>
         </div>
         <span className="text-xs font-bold text-ink-500 bg-white px-2 py-0.5 rounded-md border border-ink-200">
@@ -365,8 +370,8 @@ function PedidoCard({
                 {...dragHandle.listeners}
                 onClick={(e) => e.stopPropagation()}
                 className="p-0.5 -m-0.5 text-ink-300 hover:text-ink-600 cursor-grab active:cursor-grabbing touch-none"
-                title="Arraste pra mudar de coluna"
-                aria-label="Arraste pra mudar de coluna"
+              title="Arraste para mudar de coluna"
+              aria-label="Arraste para mudar de coluna"
               >
                 <GripVertical className="w-3.5 h-3.5" />
               </button>
@@ -398,7 +403,9 @@ function PedidoCard({
                             s.id === pedido.status && 'bg-brand-50 text-brand-800 font-semibold'
                           )}
                         >
-                          <span>{s.emoji}</span>
+                          <span className={cn('w-5 h-5 rounded flex items-center justify-center flex-shrink-0', TONE_CLASSES[s.tone])}>
+                            <s.icon className="w-3 h-3" />
+                          </span>
                           <span>{s.label}</span>
                           {s.id === pedido.status && <span className="ml-auto text-[9px] text-brand-600">atual</span>}
                         </button>
@@ -531,20 +538,20 @@ function NovoPedidoModal({ open, onClose, onCreated }: { open: boolean; onClose:
             <option value={0}>Selecione...</option>
             {clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </Select>
-          <Input label="Data da solicitacao" type="date" required value={form.data_solicitacao} onChange={(e) => setForm({ ...form, data_solicitacao: e.target.value })} />
+          <Input label="Data da solicitação" type="date" required value={form.data_solicitacao} onChange={(e) => setForm({ ...form, data_solicitacao: e.target.value })} />
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           <Select label="Categoria" required value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
-            <option value="aviso_licitacao">Aviso de Licitacao</option>
+            <option value="aviso_licitacao">Aviso de Licitação</option>
             <option value="extrato_contrato">Extrato de Contrato</option>
-            <option value="homologacao">Homologacao</option>
+            <option value="homologacao">Homologação</option>
             <option value="aditamento">Aditamento</option>
-            <option value="suspensao">Suspensao</option>
+            <option value="suspensao">Suspensão</option>
             <option value="outros">Outros</option>
           </Select>
-          <Input label="Data desejada de publicacao" type="date" value={form.data_desejada_publicacao} onChange={(e) => setForm({ ...form, data_desejada_publicacao: e.target.value })} />
+          <Input label="Data desejada de publicação" type="date" value={form.data_desejada_publicacao} onChange={(e) => setForm({ ...form, data_desejada_publicacao: e.target.value })} />
         </div>
-        <Textarea label="Descricao" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Detalhes do pedido..." />
+        <Textarea label="Descrição" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} placeholder="Detalhes do pedido..." />
 
         {contrato ? (
           <div>
@@ -566,7 +573,7 @@ function NovoPedidoModal({ open, onClose, onCreated }: { open: boolean; onClose:
                       <input type="checkbox" checked={!!selected} onChange={() => toggleItem(it.id)} className="w-4 h-4 accent-brand-700" />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-ink-900">{it.veiculo_nome}</div>
-                        <div className="text-xs text-ink-500 mt-0.5">{it.descricao} • {format.cm(saldo)} disponiveis</div>
+                        <div className="text-xs text-ink-500 mt-0.5">{it.descricao} • {format.cm(saldo)} disponíveis</div>
                       </div>
                       {selected && (
                         <div className="w-28">
@@ -581,7 +588,7 @@ function NovoPedidoModal({ open, onClose, onCreated }: { open: boolean; onClose:
           </div>
         ) : form.cliente_id > 0 ? (
           <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            Este cliente nao tem contrato ativo. Crie um contrato antes de criar pedidos.
+            Este cliente não tem contrato ativo. Crie um contrato antes de criar pedidos.
           </div>
         ) : null}
       </form>

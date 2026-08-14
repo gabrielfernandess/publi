@@ -17,6 +17,7 @@ const config: Config = {
           700: '#222C39',
           800: '#15202C',
           900: '#0B1620',
+          950: '#061018',
         },
         // Primary verde esmeralda (BLL style)
         brand: {

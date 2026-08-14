@@ -3,7 +3,7 @@ import { Scale } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="bg-ink-950 text-white pt-16 pb-8">
+    <footer className="bg-brand-900 text-white pt-16 pb-8">
       <div className="container-page">
         <div className="grid md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           <div className="md:col-span-2">
@@ -13,7 +13,7 @@ export function Footer() {
               </div>
               <div className="leading-none">
                 <div className="font-sans font-extrabold text-lg">Publi Legal</div>
-                <div className="text-accent-300 text-[10px] uppercase tracking-widest font-semibold">Publicidade Legal</div>
+                <div className="text-accent-300 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</div>
               </div>
             </div>
             <p className="mt-4 text-sm text-white/60 max-w-md leading-relaxed">

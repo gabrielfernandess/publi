@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Truck, Globe2, Building2, Newspaper, Lock } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Globe2, Building2, Newspaper, Lock } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -125,10 +125,10 @@ export default function VeiculosPage() {
           <div className="p-8 text-center text-sm text-ink-500">Carregando...</div>
         ) : data.length === 0 ? (
           <EmptyState
-            icon={<Truck className="w-12 h-12" />}
+            icon={<Newspaper className="w-12 h-12" />}
             title="Nenhum veículo cadastrado"
             description={isAdmin
-              ? "Aqui entram os diários onde vocês publicam: DOU, DOE e os jornais de grande circulação de cada estado."
+              ? "Cadastre os diários e jornais de grande circulação usados nas publicações: DOU, DOE e jornais por estado."
               : "Quando um admin cadastrar o primeiro veículo, ele aparece aqui."}
             action={isAdmin
               ? <Button onClick={openNew}><Plus className="w-4 h-4" />Cadastrar primeiro veículo</Button>
