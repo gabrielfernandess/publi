@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { body, validationResult } from 'express-validator';
 import db from '../db.js';
 import { setAuthCookie, clearAuthCookie, authMiddleware, COOKIE_NAME } from './_middleware.js';
+import { logAudit } from '../lib/audit.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-trocar-em-prod-min-32-chars';
@@ -49,16 +50,20 @@ router.post(
     const user = db.prepare('SELECT * FROM users WHERE email = ? AND ativo = 1').get(email.toLowerCase());
 
     if (!user) {
+      logAudit(req, { acao: 'login_fail', entidade: 'auth', entidadeId: null, detalhes: { email, motivo: 'usuario_nao_encontrado' }, user: { email } });
       return res.status(401).json({ error: 'Credenciais invalidas' });
     }
 
     const ok = bcrypt.compareSync(senha, user.senha_hash);
     if (!ok) {
+      logAudit(req, { acao: 'login_fail', entidade: 'auth', entidadeId: user.id, detalhes: { email, motivo: 'senha_incorreta' }, user });
       return res.status(401).json({ error: 'Credenciais invalidas' });
     }
 
     const token = signToken(user);
     setAuthCookie(res, token);
+
+    logAudit(req, { acao: 'login', entidade: 'auth', entidadeId: user.id, user });
 
     res.json({
       user: { id: user.id, email: user.email, nome: user.nome, papel: user.papel },
@@ -67,8 +72,17 @@ router.post(
   }
 );
 
-router.post('/logout', (_req, res) => {
+router.post('/logout', (req, res) => {
   clearAuthCookie(res);
+  // best-effort: tenta extrair user do token se veio no cookie
+  const token = req.cookies?.[COOKIE_NAME];
+  if (token) {
+    try {
+      const payload = jwt.verify(token, JWT_SECRET);
+      const u = db.prepare('SELECT id, nome, email FROM users WHERE id = ?').get(payload.sub);
+      if (u) logAudit(req, { acao: 'logout', entidade: 'auth', entidadeId: u.id, user: u });
+    } catch {}
+  }
   res.json({ ok: true });
 });
 

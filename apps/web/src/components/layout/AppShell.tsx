@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Truck, FileText, Package2, LogOut, Menu, X, Scale, Receipt, BarChart3,
-  Bell, Search, Settings, User as UserIcon, ChevronDown, LogIn, AlertTriangle, CheckCircle2, Info, HelpCircle,
+  Bell, Search, Settings, User as UserIcon, ChevronDown, LogIn, AlertTriangle, CheckCircle2, Info, HelpCircle, ScrollText,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ const nav: NavItem[] = [
   { href: '/app/veiculos', label: 'Veículos', icon: Truck },
   { href: '/app/notas-fiscais', label: 'Faturamento', icon: Receipt, papel: ['admin'] },
   { href: '/app/financeiro', label: 'Financeiro', icon: BarChart3, papel: ['admin'] },
+  { href: '/app/logs', label: 'Logs', icon: ScrollText, papel: ['admin'] },
 ];
 
 const PAPEIS_LABEL: Record<string, { label: string; cor: string }> = {
@@ -125,11 +126,11 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className={cn(
                   'group flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all',
                   active
-                    ? 'bg-lime-gradient text-brand-900 font-bold shadow-soft'
+                    ? 'bg-white/15 text-white font-semibold'
                     : 'text-white/85 hover:bg-white/10 hover:text-white'
                 )}
               >
-                <n.icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-brand-900' : 'text-white/70 group-hover:text-white')} />
+                <n.icon className={cn('w-4 h-4 flex-shrink-0', active ? 'text-white' : 'text-white/70 group-hover:text-white')} />
                 <span className="flex-1 truncate">{n.label}</span>
                 {n.badge && (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-amber-400 text-amber-900 font-bold uppercase">{n.badge}</span>
@@ -241,7 +242,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 onClick={() => { setOpenProfile(!openProfile); setOpenNotif(false); }}
                 className="flex items-center gap-2 p-1 pr-2 hover:bg-white/10 rounded-pill transition-colors"
               >
-                <div className="w-9 h-9 rounded-full bg-lime-gradient flex items-center justify-center text-brand-900 font-bold text-sm shadow-soft">
+                <div className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center text-white font-bold text-sm">
                   {iniciais || <UserIcon className="w-4 h-4" />}
                 </div>
                 <div className="hidden md:block text-left">
@@ -254,7 +255,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-ink-200 rounded-xl shadow-lift overflow-hidden animate-fade-in">
                   <div className="px-4 py-3 border-b border-ink-100 bg-gradient-to-br from-brand-50 to-white">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white font-bold shadow-soft">
+                      <div className="w-10 h-10 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold">
                         {iniciais || <UserIcon className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">

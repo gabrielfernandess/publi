@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import db, { STATUS_PEDIDO, STATUS_BY_ID } from '../db.js';
 import { canMove } from './_middleware.js';
+import { logAudit } from '../lib/audit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -148,6 +149,7 @@ router.post(
     });
 
     const id = tx();
+    logAudit(req, { acao: 'create', entidade: 'pedido', entidadeId: id, detalhes: { cliente_id, categoria, descricao: descricao || null } });
     res.status(201).json({ data: loadPedido(id) });
   }
 );
@@ -171,6 +173,7 @@ router.patch('/:id/status',
     }
 
     db.prepare("UPDATE pedidos SET status = ?, updated_at = datetime('now') WHERE id = ?").run(req.body.status, req.params.id);
+    logAudit(req, { acao: 'update_status', entidade: 'pedido', entidadeId: Number(req.params.id), detalhes: { de: exists.status, para: req.body.status } });
     res.json({ data: loadPedido(req.params.id) });
   }
 );
@@ -220,6 +223,7 @@ router.delete('/:id', (req, res) => {
 
   // Audit log antes do CASCADE (pedido_historico tambem sera apagado)
   console.log(`[audit] admin=${req.user.id} (${req.user.nome || ''}) excluiu pedido=${id} status=${ped.status}`);
+  logAudit(req, { acao: 'delete', entidade: 'pedido', entidadeId: id, detalhes: { status: ped.status } });
 
   // CASCADE apaga: pedido_itens, pedido_boletos, pedido_historico, pedido_arquivos
   db.prepare('DELETE FROM pedidos WHERE id = ?').run(id);

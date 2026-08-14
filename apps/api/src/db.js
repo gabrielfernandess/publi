@@ -222,6 +222,26 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS idx_pedido_boletos_pedido ON pedido_boletos(pedido_id);
   CREATE INDEX IF NOT EXISTS idx_pedido_historico_pedido ON pedido_historico(pedido_id);
   CREATE INDEX IF NOT EXISTS idx_pedido_arquivos_pedido ON pedido_arquivos(pedido_id);
+
+  -- Sprint 14a: audit log global
+  CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    user_nome TEXT,
+    user_email TEXT,
+    acao TEXT NOT NULL,             -- ex: 'create', 'update', 'delete', 'login', 'login_fail', 'export'
+    entidade TEXT NOT NULL,         -- ex: 'pedido', 'contrato', 'cliente', 'user', 'nf', 'auth'
+    entidade_id INTEGER,
+    detalhes TEXT,                  -- JSON com mudancas (before/after) ou descricao
+    ip TEXT,
+    user_agent TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_entidade ON audit_logs(entidade, entidade_id);
+  CREATE INDEX IF NOT EXISTS idx_audit_logs_acao ON audit_logs(acao);
 `;
 
 // Migrations incrementais (idempotentes via try/catch em "duplicate column")
