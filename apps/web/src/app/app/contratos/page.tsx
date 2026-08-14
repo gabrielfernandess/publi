@@ -1,8 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Plus, Search, FileText, Lock, ChevronRight } from 'lucide-react';
+import { Plus, Search, FileText, Lock, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useIsAdmin } from '@/lib/auth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -46,6 +46,24 @@ const VEICULO_DOT: Record<string, string> = {
   dou: 'bg-navy-600',
   doe: 'bg-emerald-600',
   jornal: 'bg-amber-600',
+};
+
+// Prioridade do status pra ordenação (menor = primeiro)
+const STATUS_PRIORITY: Record<string, number> = {
+  'Vigente': 1,
+  'Atenção': 2,
+  'A vencer': 3,
+  'Esgotado': 4,
+  'Vencido': 5,
+  'Encerrado': 6,
+};
+
+type SortBy = 'vigencia' | 'municipio' | 'status' | 'valor';
+const SORT_LABELS: Record<SortBy, string> = {
+  vigencia: 'Vigência',
+  municipio: 'Município',
+  status: 'Status',
+  valor: 'Valor',
 };
 
 type Cliente = { id: number; nome: string; municipio?: string; estado?: string };
@@ -104,6 +122,9 @@ export default function ContratosPage() {
   const [filterAno, setFilterAno] = useState('');
   const [filterVigencia, setFilterVigencia] = useState('');
   const [filterVeiculo, setFilterVeiculo] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('vigencia');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [openForm, setOpenForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -133,7 +154,7 @@ export default function ContratosPage() {
 
   // Filtros client-side (ano, vigência, veículo) + search/status (server-side via load)
   const filtered = useMemo(() => {
-    return data.filter((c) => {
+    const out = data.filter((c) => {
       if (filterAno) {
         const a = new Date(c.data_inicio).getFullYear();
         if (a !== Number(filterAno)) return false;
@@ -144,7 +165,35 @@ export default function ContratosPage() {
       if (filterVeiculo && !c.cm_por_veiculo?.[filterVeiculo as 'dou' | 'doe' | 'jornal']) return false;
       return true;
     });
-  }, [data, filterAno, filterVigencia, filterVeiculo]);
+    // Ordenação client-side
+    const sorted = [...out].sort((a, b) => {
+      if (sortBy === 'municipio') {
+        return (a.cliente_municipio || '').localeCompare(b.cliente_municipio || '');
+      }
+      if (sortBy === 'status') {
+        const sa = STATUS_PRIORITY[statusContrato(a).label] ?? 99;
+        const sb = STATUS_PRIORITY[statusContrato(b).label] ?? 99;
+        if (sa !== sb) return sa - sb;
+        return a.data_fim.localeCompare(b.data_fim);
+      }
+      if (sortBy === 'valor') {
+        return (b.valor_total_venda || 0) - (a.valor_total_venda || 0);
+      }
+      // 'vigencia' (default): contratos com data_fim mais próxima primeiro
+      return a.data_fim.localeCompare(b.data_fim);
+    });
+    return sorted;
+  }, [data, filterAno, filterVigencia, filterVeiculo, sortBy]);
+
+  // Paginação client-side
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const paged = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page, pageSize]);
+
+  // Reset página quando filtros mudam
+  useEffect(() => { setPage(1); }, [filterAno, filterVigencia, filterVeiculo, sortBy, search, filterStatus]);
 
   const clearFilters = () => {
     setSearch('');
@@ -234,7 +283,7 @@ export default function ContratosPage() {
             </div>
             <Button variant="outline" onClick={clearFilters} className="border-ink-300">Limpar filtros</Button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-ink-600">Status</label>
               <Select value={filterStatus} onChange={(e) => { setFilterStatus(e.target.value); setTimeout(load, 0); }}>
@@ -269,6 +318,15 @@ export default function ContratosPage() {
                 <option value="jornal">JORNAL</option>
               </Select>
             </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-ink-600">Ordenar por</label>
+              <Select value={sortBy} onChange={(e) => setSortBy(e.target.value as SortBy)}>
+                <option value="vigencia">Vigência</option>
+                <option value="status">Status</option>
+                <option value="municipio">Município</option>
+                <option value="valor">Valor</option>
+              </Select>
+            </div>
           </div>
         </div>
       </Card>
@@ -290,8 +348,17 @@ export default function ContratosPage() {
         </Card>
       ) : (
         <Card className="overflow-hidden">
-          <div className="px-4 py-2 border-b border-ink-100 text-xs text-ink-500 flex items-center justify-between">
-            <span>Mostrando <strong className="text-ink-700">{filtered.length}</strong> de <strong className="text-ink-700">{data.length}</strong> contratos</span>
+          <div className="px-4 py-2 border-b border-ink-100 text-xs text-ink-500 flex items-center justify-between gap-3 flex-wrap">
+            <span>Mostrando <strong className="text-ink-700">{filtered.length === 0 ? 0 : (page - 1) * pageSize + 1}-{Math.min(page * pageSize, filtered.length)}</strong> de <strong className="text-ink-700">{filtered.length}</strong> contratos {data.length !== filtered.length && <span className="text-ink-400">(filtro aplicado, {data.length} total)</span>}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-ink-500">Por página:</span>
+              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="px-2 py-1 rounded border border-ink-200 bg-white text-xs">
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -300,9 +367,9 @@ export default function ContratosPage() {
                   <TH className="w-32">Município</TH>
                   <TH className="w-20">Contrato</TH>
                   <TH className="w-32">Vigência</TH>
-                  <TH className="text-center bg-ink-50/60" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
+                  <TH className="text-center bg-ink-100/50" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.doe)} />DOE</span></TH>
-                  <TH className="text-center bg-ink-50/60" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
+                  <TH className="text-center bg-ink-100/50" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
                   <TH className="w-20">Status</TH>
                   <TH className="w-6" />
                 </TR>
@@ -312,10 +379,10 @@ export default function ContratosPage() {
                   <TH />
                   {['dou', 'doe', 'jornal'].map((tipo) => (
                     <>
-                      <TH key={`${tipo}-c`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Contratado</TH>
-                      <TH key={`${tipo}-f`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Faturado</TH>
-                      <TH key={`${tipo}-d`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Disponível</TH>
-                      <TH key={`${tipo}-u`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-50/60')}>Utilizado</TH>
+                      <TH key={`${tipo}-c`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Contratado</TH>
+                      <TH key={`${tipo}-f`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Faturado</TH>
+                      <TH key={`${tipo}-d`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Disponível</TH>
+                      <TH key={`${tipo}-u`} className={cn('text-[10px] text-ink-500 font-medium text-center', tipo !== 'doe' && 'bg-ink-100/50')}>Utilizado</TH>
                     </>
                   ))}
                   <TH />
@@ -323,10 +390,10 @@ export default function ContratosPage() {
                 </TR>
               </THead>
               <TBody>
-                {filtered.map((c, idx) => {
+                {paged.map((c, idx) => {
                   const st = statusContrato(c);
                   return (
-                    <TR key={c.id} className={cn('hover:bg-brand-50/40 transition-colors group', idx % 2 === 1 && 'bg-ink-50/60')}>
+                    <TR key={c.id} className={cn('hover:bg-brand-50/40 transition-colors group', idx % 2 === 1 && 'bg-ink-100/50')}>
                       <TD>
                         <Link href={`/app/contratos/${c.id}`} className="block">
                           <div className="font-medium text-ink-900 text-xs whitespace-nowrap">{c.cliente_municipio}{c.cliente_estado ? ` - ${c.cliente_estado}` : ''}</div>
@@ -347,7 +414,7 @@ export default function ContratosPage() {
                       </TD>
                       {(['dou', 'doe', 'jornal'] as const).map((tipo) => {
                         const v = c.cm_por_veiculo?.[tipo];
-                        const cellBg = tipo !== 'doe' ? 'bg-ink-50/60' : '';
+                        const cellBg = tipo !== 'doe' ? 'bg-ink-100/50' : '';
                         if (!v) {
                           return (
                             <TD key={tipo} colSpan={4} className={cn('text-center text-ink-300 text-xs', cellBg)}>—</TD>
@@ -399,6 +466,79 @@ export default function ContratosPage() {
               </TBody>
             </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="px-4 py-3 border-t border-ink-100 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-ink-500">
+                Página <strong className="text-ink-700">{page}</strong> de <strong className="text-ink-700">{totalPages}</strong>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className="p-1.5 rounded border border-ink-200 text-ink-600 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Primeira página"
+                >
+                  <ChevronsLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-1.5 rounded border border-ink-200 text-ink-600 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Anterior"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                {(() => {
+                  const pages: (number | '...')[] = [];
+                  const max = totalPages;
+                  const cur = page;
+                  if (max <= 7) {
+                    for (let i = 1; i <= max; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (cur > 3) pages.push('...');
+                    for (let i = Math.max(2, cur - 1); i <= Math.min(max - 1, cur + 1); i++) pages.push(i);
+                    if (cur < max - 2) pages.push('...');
+                    pages.push(max);
+                  }
+                  return pages.map((p, i) =>
+                    p === '...' ? (
+                      <span key={`d-${i}`} className="px-2 text-ink-400 text-xs">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={cn(
+                          'min-w-[2rem] h-8 px-2 rounded text-xs font-semibold transition-colors',
+                          page === p
+                            ? 'bg-brand-600 text-white'
+                            : 'border border-ink-200 text-ink-700 hover:bg-ink-50'
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  );
+                })()}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-1.5 rounded border border-ink-200 text-ink-600 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Próxima"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  className="p-1.5 rounded border border-ink-200 text-ink-600 hover:bg-ink-50 disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Última página"
+                >
+                  <ChevronsRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
         </Card>
       )}
 
