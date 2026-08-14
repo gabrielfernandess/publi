@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { StatCard } from '@/components/ui/StatCard';
 import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -120,6 +121,33 @@ export default function FaturamentoPage() {
 
   const abrirDetalhes = (id: number) => router.push(`/app/faturamentos/${id}`);
 
+  const exportarCSV = () => {
+    const headers = ['ID', 'Cliente', 'Município/UF', 'Contrato', 'Período', 'Publicações', 'Total (cm)', 'Valor (R$)', 'Status'];
+    const rows = data.map((f) => [
+      f.id,
+      f.cliente_nome,
+      `${f.cliente_municipio}${f.cliente_estado ? '/' + f.cliente_estado : ''}`,
+      f.contrato_numero || '',
+      `${f.periodo_inicio} a ${f.periodo_fim}`,
+      f.qtd_publicacoes,
+      f.cm_total,
+      f.valor_total.toFixed(2),
+      f.status,
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `faturamentos_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const [showNovoModal, setShowNovoModal] = useState(false);
+
   return (
     <div>
       <PageHeader
@@ -128,10 +156,10 @@ export default function FaturamentoPage() {
         actions={
           isAdmin ? (
             <>
-              <Button variant="outline" rounded="md">
+              <Button variant="outline" rounded="md" onClick={exportarCSV}>
                 <Download className="w-4 h-4" />Exportar
               </Button>
-              <Button variant="primary" rounded="md">
+              <Button variant="primary" rounded="md" onClick={() => setShowNovoModal(true)}>
                 <Plus className="w-4 h-4" />Novo faturamento
               </Button>
             </>
@@ -330,6 +358,37 @@ export default function FaturamentoPage() {
           </div>
         )}
       </Card>
+
+      <Modal
+        open={showNovoModal}
+        onClose={() => setShowNovoModal(false)}
+        title="Novo faturamento"
+        size="lg"
+        footer={
+          <Button variant="ghost" onClick={() => setShowNovoModal(false)}>Fechar</Button>
+        }
+      >
+        <div className="text-sm text-ink-600 space-y-3">
+          <p>
+            Pra montar um faturamento novo, é preciso selecionar os pedidos do mesmo cliente/período/contrato
+            e fechar o ciclo. Isso é feito na página do contrato.
+          </p>
+          <p className="text-xs text-ink-500">
+            Dica: abra um contrato, selecione os pedidos no painel "Saldos por veículo" e clique em
+            <strong> "Criar faturamento" </strong> quando todos estiverem prontos.
+          </p>
+          <Button
+            variant="primary"
+            rounded="md"
+            onClick={() => {
+              setShowNovoModal(false);
+              router.push('/app/contratos');
+            }}
+          >
+            Ir para Contratos
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -6,6 +6,9 @@ import { ArrowLeft, FileText, AlertTriangle, Edit2, Receipt, Building2 } from 'l
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Modal } from '@/components/ui/Modal';
 import { useIsAdmin } from '@/lib/auth';
 import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -87,6 +90,10 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
   const [data, setData] = useState<ContratoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [movs, setMovs] = useState<Movimentacao[] | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editForm, setEditForm] = useState<{ numero: string; objeto: string; data_inicio: string; data_fim: string; modalidade: string; processo: string }>({ numero: '', objeto: '', data_inicio: '', data_fim: '', modalidade: 'licitacao', processo: '' });
+  const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
     api.get<{ data: ContratoDetalhe }>(`/api/contratos/${id}`)
@@ -96,6 +103,37 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
       .then((r) => setMovs(r.data))
       .catch(() => setMovs([]));
   }, [id]);
+
+  const abrirEdicao = () => {
+    if (!data) return;
+    setEditForm({
+      numero: data.numero || '',
+      objeto: data.objeto || '',
+      data_inicio: data.data_inicio,
+      data_fim: data.data_fim,
+      modalidade: data.modalidade || 'licitacao',
+      processo: data.processo || '',
+    });
+    setErro(null);
+    setShowEdit(true);
+  };
+
+  const salvarEdicao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro(null);
+    setSaving(true);
+    try {
+      await api.put(`/api/contratos/${id}`, editForm);
+      setShowEdit(false);
+      // recarrega
+      const r = await api.get<{ data: ContratoDetalhe }>(`/api/contratos/${id}`);
+      setData(r.data);
+    } catch (err: any) {
+      setErro(err.message || 'Erro ao salvar');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (loading) return <div className="p-8 text-sm text-ink-500">Carregando contrato...</div>;
   if (!data) return <div className="p-8 text-sm text-ink-500">Contrato não encontrado.</div>;
@@ -266,7 +304,7 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
               </div>
             </dl>
             {isAdmin && (
-              <Button variant="outline" size="sm" className="mt-4 w-full">
+              <Button variant="outline" size="sm" className="mt-4 w-full" onClick={abrirEdicao}>
                 <Edit2 className="w-3.5 h-3.5" />Editar contrato
               </Button>
             )}
@@ -334,6 +372,40 @@ export default function ContratoDetalhePage({ params }: { params: Promise<{ id: 
           </div>
         )}
       </Card>
+
+      <Modal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        title="Editar contrato"
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowEdit(false)}>Cancelar</Button>
+            <Button onClick={salvarEdicao} loading={saving}>Salvar alterações</Button>
+          </>
+        }
+      >
+        <form onSubmit={salvarEdicao} className="space-y-4">
+          {erro && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{erro}</div>}
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Input label="Número do contrato" value={editForm.numero} onChange={(e) => setEditForm({ ...editForm, numero: e.target.value })} placeholder="063/2025" />
+            <Select label="Modalidade" value={editForm.modalidade} onChange={(e) => setEditForm({ ...editForm, modalidade: e.target.value })}>
+              <option value="licitacao">Licitação</option>
+              <option value="adesao">Adesão (ata)</option>
+              <option value="contrato_direto">Contrato direto</option>
+            </Select>
+          </div>
+          <Input label="Objeto" value={editForm.objeto} onChange={(e) => setEditForm({ ...editForm, objeto: e.target.value })} placeholder="Publicidade legal em DOU, DOE e Jornal..." />
+          <div className="grid sm:grid-cols-3 gap-4">
+            <Input label="Data início" type="date" required value={editForm.data_inicio} onChange={(e) => setEditForm({ ...editForm, data_inicio: e.target.value })} />
+            <Input label="Data fim" type="date" required value={editForm.data_fim} onChange={(e) => setEditForm({ ...editForm, data_fim: e.target.value })} />
+            <Input label="Nº do processo" value={editForm.processo} onChange={(e) => setEditForm({ ...editForm, processo: e.target.value })} placeholder="091/2025" />
+          </div>
+          <p className="text-xs text-ink-500">
+            Os itens (veículos, centímetros, valores) não são editáveis aqui. Pra alterar isso, recrie o contrato.
+          </p>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { StatCard } from '@/components/ui/StatCard';
+import { Modal } from '@/components/ui/Modal';
 import { format } from '@/lib/format';
 import { cn } from '@/lib/utils';
 
@@ -64,13 +65,44 @@ export default function FaturamentoDetalhePage() {
   const id = Number(params.id);
   const [data, setData] = useState<FaturamentoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
+  const [acting, setActing] = useState(false);
+  const [showExcluir, setShowExcluir] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
     api.get<{ data: FaturamentoDetalhe }>(`/api/faturamentos/${id}`)
       .then((r) => setData(r.data))
       .finally(() => setLoading(false));
-  }, [id]);
+  };
+
+  useEffect(() => { load(); }, [id]);
+
+  const aprovar = async () => {
+    setActing(true);
+    try {
+      await api.patch(`/api/faturamentos/${id}`, { status: 'aprovado', data_aprovacao: new Date().toISOString().slice(0, 10) });
+      await load();
+    } catch (e: any) {
+      alert(e.message || 'Erro ao aprovar');
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const excluir = async () => {
+    setActing(true);
+    try {
+      await api.delete(`/api/faturamentos/${id}`);
+      router.push('/app/notas-fiscais');
+    } catch (e: any) {
+      alert(e.message || 'Erro ao excluir');
+      setActing(false);
+    }
+  };
+
+  const imprimir = () => {
+    window.print();
+  };
 
   if (loading) {
     return <div className="text-sm text-ink-500 py-8 text-center">Carregando faturamento...</div>;
@@ -224,20 +256,22 @@ export default function FaturamentoDetalhePage() {
 
       {isAdmin && (
         <div className="mb-5 flex flex-wrap gap-2">
-          <Button variant="primary" size="sm" rounded="md" disabled={data.status !== 'em_aprovacao'}>
+          <Button variant="primary" size="sm" rounded="md" disabled={data.status !== 'em_aprovacao' || acting} loading={acting} onClick={aprovar}>
             <Check className="w-3.5 h-3.5" />Aprovar faturamento
           </Button>
-          <Button variant="outline" size="sm" rounded="md">
+          <Button variant="outline" size="sm" rounded="md" disabled>
             <Edit2 className="w-3.5 h-3.5" />Editar seleções
+            <span className="ml-1 text-[10px] text-ink-400">(em breve)</span>
           </Button>
-          <Button variant="outline" size="sm" rounded="md">
+          <Button variant="outline" size="sm" rounded="md" disabled={acting} onClick={() => setShowExcluir(true)}>
             <Trash2 className="w-3.5 h-3.5" />Excluir faturamento
           </Button>
-          <Button variant="outline" size="sm" rounded="md">
+          <Button variant="outline" size="sm" rounded="md" onClick={imprimir}>
             <Printer className="w-3.5 h-3.5" />Imprimir resumo
           </Button>
-          <Button variant="outline" size="sm" rounded="md">
+          <Button variant="outline" size="sm" rounded="md" disabled>
             <History className="w-3.5 h-3.5" />Histórico / Observações
+            <span className="ml-1 text-[10px] text-ink-400">(em breve)</span>
           </Button>
         </div>
       )}
@@ -277,6 +311,26 @@ export default function FaturamentoDetalhePage() {
           {data.observacoes}
         </div>
       )}
+
+      <Modal
+        open={showExcluir}
+        onClose={() => setShowExcluir(false)}
+        title="Excluir faturamento"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowExcluir(false)}>Cancelar</Button>
+            <Button variant="primary" onClick={excluir} loading={acting} className="bg-red-600 hover:bg-red-700">Excluir</Button>
+          </>
+        }
+      >
+        <div className="text-sm text-ink-600 space-y-2">
+          <p>Tem certeza que quer excluir o faturamento de <strong>{data.cliente_nome}</strong> ({mesAno(data.periodo_inicio)})?</p>
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2">
+            Os pedidos vinculados serão desvinculados (não excluídos). A ação não pode ser desfeita.
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }
