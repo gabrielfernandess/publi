@@ -362,7 +362,7 @@ export default function ContratosPage() {
           </div>
           <div className="overflow-x-auto">
             <Table>
-              <THead>
+              <THead className="bg-transparent border-b border-ink-200">
                 <TR>
                   <TH className="w-32 bg-ink-100/50">Município</TH>
                   <TH className="w-20 bg-ink-100/50">Contrato</TH>
