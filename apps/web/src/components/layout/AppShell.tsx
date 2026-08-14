@@ -71,6 +71,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
+  // bloqueia scroll do body quando sidebar mobile esta aberto
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (openSidebar) {
+      const original = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = original; };
+    }
+  }, [openSidebar]);
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
   const navFiltrada = nav.filter((n) => !n.papel || n.papel.includes(user?.papel || ''));
   const papelInfo = PAPEIS_LABEL[user?.papel || ''] || { label: user?.papel || '—', cor: 'bg-ink-100 text-ink-700' };
@@ -94,16 +104,15 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* ============== SIDEBAR ============== */}
       <aside
         className={cn(
-          'fixed lg:sticky top-0 left-0 z-40 lg:z-auto w-64 h-screen bg-brand-900 text-white',
+          'fixed lg:sticky top-0 left-0 z-40 lg:z-auto w-72 sm:w-80 lg:w-64 h-screen bg-brand-900 text-white',
           'flex flex-col transition-transform flex-shrink-0',
           openSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo */}
         <div className="px-5 py-5 flex items-center justify-between">
-          <Link href="/app/dashboard" className="flex items-center group" onClick={() => setOpenSidebar(false)}>
-            <img src="/logo-mark-white.png" alt="Publi Legal" className="h-9 w-auto group-hover:opacity-90 transition-opacity" />
-            <span className="text-[9px] text-lime-300 uppercase tracking-widest font-bold ml-2">Sistema</span>
+          <Link href="/app/dashboard" onClick={() => setOpenSidebar(false)}>
+            <img src="/logo-clean-white.png" alt="Publi Legal" className="h-12 w-auto hover:opacity-90 transition-opacity" />
           </Link>
           <button onClick={() => setOpenSidebar(false)} className="lg:hidden text-white/70 hover:text-white p-1 -mr-1">
             <X className="w-5 h-5" />
@@ -158,10 +167,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* ============== COLUNA PRINCIPAL (header + main) ============== */}
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col max-w-full">
         {/* ============== TOP BAR ============== */}
         <header className="sticky top-0 z-30 bg-brand-900 text-white">
-          <div className="h-16 px-4 sm:px-6 flex items-center gap-3">
+          <div className="h-14 sm:h-16 px-3 sm:px-6 flex items-center gap-2 sm:gap-3">
             {/* Mobile menu */}
             <button onClick={() => setOpenSidebar(true)} className="lg:hidden p-2 -ml-2 text-ink-700 hover:text-ink-900">
               <Menu className="w-5 h-5" />

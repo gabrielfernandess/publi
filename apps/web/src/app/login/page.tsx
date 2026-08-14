@@ -254,9 +254,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-ink-50">
       <div className="hidden lg:flex lg:w-1/2 bg-brand-900 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <Link href="/" className="flex items-center group w-fit">
-            <img src="/logo-mark-white.png" alt="Publi Legal" className="h-11 w-auto group-hover:opacity-90 transition-opacity" />
-            <span className="text-accent-300 text-xs uppercase tracking-widest font-semibold ml-2">Publicidade Legal</span>
+          <Link href="/" className="w-fit">
+            <img src="/logo-clean-white.png" alt="Publi Legal" className="h-14 w-auto hover:opacity-90 transition-opacity" />
           </Link>
           <div>
             <h2 className="font-sans text-4xl font-extrabold text-balance text-accent-300">
@@ -280,9 +279,8 @@ export default function LoginPage() {
 
         <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-md">
-            <div className="lg:hidden mb-8 flex items-center gap-2.5">
-              <img src="/logo-mark.png" alt="Publi Legal" className="h-10 w-auto" />
-              <span className="text-brand-600 text-xs uppercase tracking-widest font-semibold">Publicidade Legal</span>
+            <div className="lg:hidden mb-8">
+              <img src="/logo-clean.png" alt="Publi Legal" className="h-12 w-auto" />
             </div>
 
             <h1 className="font-sans text-3xl font-extrabold text-ink-900">Acessar sistema</h1>

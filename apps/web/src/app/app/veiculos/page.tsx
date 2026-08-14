@@ -135,6 +135,7 @@ export default function VeiculosPage() {
               : undefined}
           />
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <THead>
               <TR>
@@ -180,6 +181,7 @@ export default function VeiculosPage() {
               })}
             </TBody>
           </Table>
+          </div>
         )}
       </Card>
 

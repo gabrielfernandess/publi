@@ -175,6 +175,7 @@ export default function ClientesPage() {
               : undefined}
           />
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <THead>
               <TR>
@@ -233,6 +234,7 @@ export default function ClientesPage() {
               })}
             </TBody>
           </Table>
+          </div>
         )}
       </Card>
 
