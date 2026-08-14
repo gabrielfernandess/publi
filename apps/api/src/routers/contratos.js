@@ -15,6 +15,31 @@ function diffDias(fim) {
 // LISTAR com info de saldo
 router.get('/', (req, res) => {
   const { search, status, cliente_id } = req.query;
+  const where = [];
+  const params = [];
+  if (search) {
+    where.push('(LOWER(cl.nome) LIKE ? OR LOWER(c.numero) LIKE ? OR LOWER(c.objeto) LIKE ?)');
+    const s = `%${search.toLowerCase()}%`;
+    params.push(s, s, s);
+  }
+  if (status) { where.push('c.status = ?'); params.push(status); }
+  if (cliente_id) { where.push('c.cliente_id = ?'); params.push(cliente_id); }
+  const whereSql = where.length > 0 ? ` AND ${where.join(' AND ')}` : '';
+
+  // Total antes do LIMIT
+  const totalRow = db.prepare(`
+    SELECT COUNT(DISTINCT c.id) AS total
+    FROM contratos c
+    INNER JOIN clientes cl ON cl.id = c.cliente_id
+    WHERE 1=1${whereSql}
+  `).get(...params);
+  const total = totalRow.total;
+
+  // Paginação
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit) || 1000));
+  const offset = (page - 1) * limit;
+
   let sql = `
     SELECT
       c.*,
@@ -30,18 +55,12 @@ router.get('/', (req, res) => {
     FROM contratos c
     INNER JOIN clientes cl ON cl.id = c.cliente_id
     LEFT JOIN contrato_itens ci ON ci.contrato_id = c.id
-    WHERE 1=1
+    WHERE 1=1${whereSql}
+    GROUP BY c.id
+    ORDER BY c.data_fim ASC, c.id DESC
+    LIMIT ? OFFSET ?
   `;
-  const params = [];
-  if (search) {
-    sql += ' AND (LOWER(cl.nome) LIKE ? OR LOWER(c.numero) LIKE ? OR LOWER(c.objeto) LIKE ?)';
-    const s = `%${search.toLowerCase()}%`;
-    params.push(s, s, s);
-  }
-  if (status) { sql += ' AND c.status = ?'; params.push(status); }
-  if (cliente_id) { sql += ' AND c.cliente_id = ?'; params.push(cliente_id); }
-  sql += ' GROUP BY c.id ORDER BY c.data_fim ASC, c.id DESC';
-  const rows = db.prepare(sql).all(...params).map((r) => ({ ...r, dias_para_vencer: diffDias(r.data_fim) }));
+  const rows = db.prepare(sql).all(...params, limit, offset).map((r) => ({ ...r, dias_para_vencer: diffDias(r.data_fim) }));
 
   // complementa com cm por veiculo (DOU/DOE/JORNAL)
   const ids = rows.map((r) => r.id);
@@ -71,7 +90,10 @@ router.get('/', (req, res) => {
     }
   }
 
-  res.json({ data: rows });
+  res.json({
+    data: rows,
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 });
 
 // ============== Sprint 4: Alertas (rota estática ANTES de /:id) ==============
