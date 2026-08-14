@@ -7,7 +7,7 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           <div className="md:col-span-2">
             <div>
-              <img src="/logo-clean-white.png" alt="Publi Legal" className="h-12 w-auto" />
+              <img src="/logo-clean-white.png" alt="Publi Legal" className="h-10 w-auto" />
             </div>
             <p className="mt-4 text-sm text-white/60 max-w-md leading-relaxed">
               Publicação de atos oficiais em DOU, DOE e Jornais de Grande Circulação. Atendemos prefeituras,
