@@ -362,18 +362,18 @@ export default function ContratosPage() {
           </div>
           <div className="overflow-x-auto">
             <Table>
-              <THead className="bg-transparent border-b border-ink-200">
-                <TR>
-                  <TH className="w-32 bg-ink-100/50">Município</TH>
-                  <TH className="w-20 bg-ink-100/50">Contrato</TH>
-                  <TH className="w-32 bg-ink-100/50">Vigência</TH>
-                  <TH className="text-center bg-ink-100/50" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
+              <THead className="bg-transparent">
+                <TR className="bg-ink-100/50 hover:bg-ink-100/50">
+                  <TH className="w-32">Município</TH>
+                  <TH className="w-20">Contrato</TH>
+                  <TH className="w-32">Vigência</TH>
+                  <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.dou)} />DOU</span></TH>
                   <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.doe)} />DOE</span></TH>
-                  <TH className="text-center bg-ink-100/50" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
-                  <TH className="w-20 bg-ink-100/50">Status</TH>
-                  <TH className="w-6 bg-ink-100/50" />
+                  <TH className="text-center" colSpan={4}><span className="inline-flex items-center gap-1"><span className={cn('w-2 h-2 rounded-sm', VEICULO_DOT.jornal)} />JORNAL</span></TH>
+                  <TH className="w-20">Status</TH>
+                  <TH className="w-6" />
                 </TR>
-                <TR>
+                <TR className="hover:bg-transparent">
                   <TH />
                   <TH />
                   <TH />
