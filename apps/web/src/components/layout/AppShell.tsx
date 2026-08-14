@@ -22,6 +22,7 @@ const nav: NavItem[] = [
   { href: '/app/notas-fiscais', label: 'Faturamento', icon: Receipt, papel: ['admin'] },
   { href: '/app/financeiro', label: 'Financeiro', icon: BarChart3, papel: ['admin'] },
   { href: '/app/logs', label: 'Logs', icon: ScrollText, papel: ['admin'] },
+  { href: '/app/usuarios', label: 'Usuários', icon: Users, papel: ['admin'] },
 ];
 
 const PAPEIS_LABEL: Record<string, { label: string; cor: string }> = {
