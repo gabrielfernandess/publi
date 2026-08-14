@@ -29,6 +29,21 @@ const PAPEIS: Record<string, { label: string; cor: string }> = {
   user:  { label: 'Usuário', cor: 'bg-sky-100 text-sky-700' },
 };
 
+// Iniciais do nome: pega ate 2 letras relevantes (ignora palavras curtas tipo "de", "da")
+function iniciais(nome: string): string {
+  const PALAVRAS_IGNORAR = new Set(['de', 'da', 'do', 'dos', 'das', 'e']);
+  const partes = nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((p) => !PALAVRAS_IGNORAR.has(p.toLowerCase()));
+  if (partes.length === 0) return '?';
+  if (partes.length === 1) {
+    // 1 palavra: pega 2 primeiras letras (ex: "Maria" -> "MA")
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+  return (partes[0][0] + partes[1][0]).toUpperCase();
+}
+
 export default function UsuariosPage() {
   const { user: currentUser } = useAuth();
   const isAdmin = useIsAdmin();
@@ -151,7 +166,7 @@ export default function UsuariosPage() {
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <div className={cn('w-8 h-8 rounded-pill flex items-center justify-center font-bold text-xs flex-shrink-0', u.ativo ? 'bg-brand-50 text-brand-700' : 'bg-ink-100 text-ink-400')}>
-                              {u.nome.split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]).join('').toUpperCase()}
+                              {iniciais(u.nome)}
                             </div>
                             <div className="font-medium text-ink-900">
                               {u.nome}
