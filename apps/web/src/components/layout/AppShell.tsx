@@ -112,7 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* Logo */}
         <div className="px-5 py-5 flex items-center justify-between">
           <Link href="/app/dashboard" onClick={() => setOpenSidebar(false)}>
-            <img src="/logo-mark-white.png?v=6" alt="Publi Legal" className="h-16 w-auto hover:opacity-90 transition-opacity" />
+            <img src="/logo-header.jpg?v=1" alt="Publi Legal" className="h-16 w-auto hover:opacity-90 transition-opacity" />
           </Link>
           <button onClick={() => setOpenSidebar(false)} className="lg:hidden text-white/70 hover:text-white p-1 -mr-1">
             <X className="w-5 h-5" />

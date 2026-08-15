@@ -1,20 +1,22 @@
 import { Building2, ScrollText, MapPin } from 'lucide-react';
 
 const tipos = [
-  { icon: Building2, titulo: 'Prefeituras', descricao: 'Atos de licitações, contratos, homologações e publicações oficiais em geral.' },
+  { icon: Building2, titulo: 'Prefeituras', descricao: 'Editais de licitação, extratos de contrato, homologações e publicações oficiais em geral.' },
   { icon: ScrollText, titulo: 'Câmaras Municipais', descricao: 'Atos legislativos, editais, atas e demais publicações oficiais do legislativo.' },
-  { icon: MapPin, titulo: 'Autarquias e outros órgãos', descricao: 'Publicação em diário oficial com formatação conforme exigência do veículo.' },
+  { icon: MapPin, titulo: 'Autarquias e outros órgãos', descricao: 'Publicação em diário oficial com formatação conforme a exigência do veículo.' },
 ];
+
+const estadosAtivos = ['PA', 'MA', 'TO', 'MT', 'PR', 'SC'];
 
 export function Clients() {
   return (
-    <section id="clientes" className="py-20 lg:py-28 bg-soft-gradient">
+    <section id="cobertura" className="py-20 lg:py-28 bg-soft-gradient">
       <div className="container-page">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
+          <h2 className="font-serif text-3xl lg:text-[2.75rem] font-bold text-ink-900 text-balance leading-[1.1]">
             Prefeituras, câmaras e autarquias
           </h2>
-          <p className="mt-5 text-lg text-ink-600">
+          <p className="mt-5 text-lg text-ink-600 text-balance leading-relaxed">
             Mais de 20 órgãos públicos em todo o Brasil. Das câmaras menores às prefeituras de maior porte — o mesmo padrão de atendimento.
           </p>
         </div>
@@ -31,17 +33,22 @@ export function Clients() {
           ))}
         </div>
 
-        <div className="mt-14 bg-brand-900 rounded-3xl p-8 lg:p-12 text-white">
-          <h3 className="font-sans text-2xl lg:text-3xl font-extrabold text-white text-balance">
-            Publicações em todas as regiões do Brasil
-          </h3>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {['MA', 'TO', 'PR', 'PA', 'MT', 'DF', 'SP', 'RJ', 'MG', 'BA', 'PE', 'CE', 'RN', 'PB', 'AL', 'SE', 'PI', 'GO', 'MS', 'RS', 'SC', 'ES', 'AM', 'RO', 'AC', 'AP', 'RR'].map((uf) => (
-              <span key={uf} className="px-3 py-1.5 rounded-md bg-white/10 text-sm font-semibold tracking-wider">
+        {/* Badges de estados em operação */}
+        <div className="mt-14 text-center">
+          <div className="inline-flex items-center gap-2 text-xs font-mono tabular-nums tracking-widest uppercase text-brand-600 font-semibold">
+            <MapPin className="w-4 h-4" />
+            {estadosAtivos.length} estados em operação
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            {estadosAtivos.map((uf) => (
+              <span key={uf} className="px-3 py-1.5 rounded-md bg-accent-400 text-brand-900 text-sm font-bold tracking-wider">
                 {uf}
               </span>
             ))}
           </div>
+          <p className="mt-5 text-sm text-ink-500 max-w-md mx-auto leading-relaxed">
+            Atendemos solicitações de todo o Brasil — fale com a equipe para confirmar prazo no seu estado.
+          </p>
         </div>
       </div>
     </section>

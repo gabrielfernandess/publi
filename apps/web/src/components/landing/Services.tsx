@@ -7,24 +7,24 @@ const servicos = [
     cor: 'bg-brand-600 text-white',
     titulo: 'DOU',
     subtitulo: 'Diário Oficial da União',
-    descricao: 'Publicação de atos com abrangência federal — licitações, contratos e homologações que exigem visibilidade nacional.',
-    bullets: ['Atos federais', 'Visão nacional', 'Prazo de 1 dia útil'],
+    descricao: 'Atos com abrangência federal — licitações, contratos e homologações que exigem visibilidade nacional.',
+    bullets: ['Editais de licitação federal', 'Extratos de contrato', 'Prazo de 1 dia útil'],
   },
   {
     icon: Building2,
     cor: 'bg-lime-gradient text-brand-900',
     titulo: 'DOE',
     subtitulo: 'Diário Oficial do Estado',
-    descricao: 'Atos oficiais do estado — licitações estaduais, homologações e extratos de contrato com força legal local.',
-    bullets: ['Múltiplos estados', 'Atos locais', 'Envio diário'],
+    descricao: 'Atos oficiais do estado — licitações, homologações e extratos de contrato com força legal local.',
+    bullets: ['Cobertura em múltiplos estados', 'Formatação por padrão estadual', 'Envio diário'],
   },
   {
     icon: Newspaper,
     cor: 'bg-ink-900 text-white',
     titulo: 'Jornal',
     subtitulo: 'Grande Circulação',
-    descricao: 'Publicação em jornais de grande circulação regional — essencial para licitações de maior valor e ampla divulgação.',
-    bullets: ['O Imparcial, O Pará...', 'Jornal Pequeno, Primeira Página', 'Faturamento quinzenal'],
+    descricao: 'Publicação em jornais regionais de grande circulação — essencial para licitações de maior valor.',
+    bullets: ['O Imparcial, O Pará e outros', 'Jornal Pequeno, Primeira Página', 'Faturamento quinzenal'],
   },
 ];
 
@@ -32,12 +32,12 @@ export function Services() {
   return (
     <section id="servicos" className="py-20 lg:py-28 bg-white">
       <div className="container-page">
-        <div className="text-center max-w-2xl mx-auto">
-          <h2 className="font-sans text-3xl lg:text-5xl font-extrabold text-ink-900 text-balance">
-            Publicamos onde sua licitação precisa aparecer
+        <div className="max-w-2xl">
+          <h2 className="font-serif text-3xl lg:text-[2.75rem] font-bold text-ink-900 text-balance leading-[1.1]">
+            Três veículos, um único processo
           </h2>
           <p className="mt-5 text-lg text-ink-600">
-            DOU, DOE e os principais jornais de grande circulação. Você escolhe o veículo; cuidamos do envio.
+            DOU, DOE e os principais jornais de grande circulação. Você escolhe onde o ato precisa sair; cuidamos do envio, da conferência e do protocolo.
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export function Services() {
                 <div className={`w-12 h-12 rounded-xl ${s.cor} flex items-center justify-center mb-3`}>
                   <s.icon className="w-6 h-6" />
                 </div>
-                <CardTitle className="text-2xl font-sans">{s.titulo}</CardTitle>
+                <CardTitle className="text-2xl font-serif">{s.titulo}</CardTitle>
                 <CardDescription>{s.subtitulo}</CardDescription>
               </CardHeader>
               <CardBody>

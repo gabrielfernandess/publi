@@ -10,7 +10,8 @@ const links = [
   { href: '#sobre', label: 'Quem somos' },
   { href: '#servicos', label: 'Serviços' },
   { href: '#metodo', label: 'Método' },
-  { href: '#resultados', label: 'Resultados' },
+  { href: '#cobertura', label: 'Cobertura' },
+  { href: '#equipe', label: 'Equipe' },
   { href: '#contato', label: 'Contato' },
 ];
 
@@ -29,12 +30,16 @@ export function LandingHeader() {
     <header
       className={cn(
         'fixed top-0 left-0 right-0 z-40 transition-all duration-300',
-        scrolled ? 'bg-brand-900/95 backdrop-blur-md border-b border-white/5' : 'bg-transparent'
+        scrolled ? 'bg-brand-900 border-b border-white/10 shadow-sm' : 'bg-transparent'
       )}
     >
       <div className="container-page flex items-center justify-between h-16 lg:h-20">
-        <Link href="/">
-          <img src="/logo-mark-white.png?v=6" alt="Publi Legal" className="h-12 w-auto hover:opacity-90 transition-opacity" />
+        <Link href="/" className="flex items-center gap-3 shrink-0">
+          <img
+            src="/logo-header.jpg?v=1"
+            alt="Publi Legal"
+            className="h-10 w-auto hover:opacity-90 transition-opacity"
+          />
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1">
@@ -42,7 +47,7 @@ export function LandingHeader() {
             <a
               key={l.href}
               href={l.href}
-              className="px-4 py-2 text-sm text-white/80 hover:text-white transition-colors rounded-md"
+              className="px-3.5 py-2 text-sm text-white/75 hover:text-white transition-colors rounded-md"
             >
               {l.label}
             </a>
@@ -51,7 +56,7 @@ export function LandingHeader() {
 
         <div className="hidden lg:flex items-center gap-2">
           <Link href="/login">
-            <Button variant="lime" size="md" className="rounded-pill">
+            <Button variant="lime" size="md" rounded="lg">
               Acessar sistema
             </Button>
           </Link>
@@ -61,13 +66,14 @@ export function LandingHeader() {
           onClick={() => setOpen(!open)}
           className="lg:hidden text-white p-2 -mr-2"
           aria-label="Menu"
+          aria-expanded={open}
         >
           {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
       {open && (
-        <div className="lg:hidden bg-brand-900/95 backdrop-blur-md border-t border-white/5 animate-fade-in">
+        <div className="lg:hidden bg-brand-900 border-t border-white/10">
           <div className="container-page py-4 flex flex-col gap-1">
             {links.map((l) => (
               <a
@@ -80,7 +86,9 @@ export function LandingHeader() {
               </a>
             ))}
             <Link href="/login" onClick={() => setOpen(false)} className="mt-2">
-              <Button variant="lime" fullWidth className="rounded-pill">Acessar sistema</Button>
+              <Button variant="lime" fullWidth rounded="lg">
+                Acessar sistema
+              </Button>
             </Link>
           </div>
         </div>
